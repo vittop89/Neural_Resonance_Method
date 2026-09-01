@@ -8,6 +8,8 @@ Il progetto è su **ESP32-WROOM-32**, scheda DevKit a 38 pin. Tre limiti reali d
 2. **I DAC esistono solo su GPIO 25 e 26** e non sono spostabili altrove.
 3. **GPIO 6–11 sono la flash SPI** e non vanno toccati; **34–39 sono solo ingresso** e senza pull-up; **0, 2, 12, 15** sono pin di strapping.
 
+![Infrastruttura elettronica: quali moduli stanno sul rail a 12 V, quali sui 5 V dell'LM2596 e quali a 3,3 V](../docs/img/sistema-esp32.svg)
+
 | GPIO | Funzione | Nota |
 |---|---|---|
 | 34 | FSR402 — respiro | ADC1_CH6, solo ingresso: va bene, è un analogico |
@@ -26,6 +28,8 @@ Il progetto è su **ESP32-WROOM-32**, scheda DevKit a 38 pin. Tre limiti reali d
 | 33 | ponticello sham verso GND | pull-up interno |
 | 2 | LED di stato | integrato sulla scheda, zero cablaggio |
 | liberi | 5, 14, 15, 32, 35, 36, 39 | |
+
+![Schema elettrico dei quattro circuiti: partitore dell'FSR, catena tattile dal DAC all'amplificatore, buffer e MOSFET per i LED, collegamenti e ponticelli del PCM5102A](../docs/img/schema-elettrico.svg)
 
 Nessun timer da spartire e nessun prescaler da proteggere: il **LEDC ha 16 canali PWM indipendenti** e il canale tattile ha un timer hardware tutto suo. Tutta la sezione sui timer che serviva sull'Uno è sparita.
 

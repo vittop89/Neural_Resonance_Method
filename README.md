@@ -20,6 +20,8 @@ Due sensori in ingresso — una fascia toracica con sensore di forza, un sensore
 | **Coerenza cardiorespiratoria** (0–1) | — | saturazione del colore | intensità della campana |
 | **Cambio di direzione** (evento) | — | — | campana: acuta al vertice, grave al fondo |
 
+![Schema di funzionamento: dai due sensori alle quattro grandezze calcolate, e da queste ai tre canali di uscita, con l'anello che si richiude sul corpo](docs/img/funzionamento.svg)
+
 L'ultima riga della colonna "Luce" è la parte interessante. La saturazione del colore non segue il respiro: segue **quanto il cuore sta rispondendo al respiro** — l'aritmia sinusale respiratoria. È l'unico indicatore che usa entrambi i sensori insieme, e l'unico che non si può falsificare con la volontà.
 
 > **Attenzione a quanto pesa quel numero.** L'indice di coerenza è stato costruito appositamente per questo progetto: una media mobile della concordanza fra direzione dell'intervallo R-R e direzione del respiro. È plausibile e si comporta ragionevolmente, ma **non è tarato contro niente** e non corrisponde alle misure spettrali usate nella letteratura sull'HRV. È un indicatore di riscontro, non una misura. Nel resto del repository i numeri sono verificati sulle schede dei costruttori; questo no, ed è giusto saperlo.
@@ -106,6 +108,8 @@ NOTICE.md               avvertenze legali e licenze
 ## Perché ESP32 e non Arduino
 
 Il progetto è nato su Arduino Uno, e metà del lavoro è finito in aggiramenti dei suoi limiti: sette canali PWM richiesti su sei disponibili, MIDI e telemetria che si escludono per via dell'unica porta seriale, i timer da proteggere per non rompere `millis()`, `sqrt()` spostata fuori dal loop, la tabella seno che pesa sui 2 KB di RAM.
+
+![Infrastruttura elettronica: alimentatore 12 V, convertitore a 5 V, ESP32 al centro, e le tre catene di uscita verso trasduttori, striscia LED e cuffie](docs/img/sistema-esp32.svg)
 
 Sull'ESP32 **nessuno di quei problemi esiste**, e insieme spariscono tre componenti:
 

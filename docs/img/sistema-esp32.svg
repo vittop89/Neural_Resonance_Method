@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="720" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="720" height="520" fill="#f6f7f9"/>
+  <text x="20" y="26" font-size="15" font-weight="600" fill="#1f2328">Infrastruttura elettronica — chi alimenta cosa, e chi parla con chi</text>
+
+  <!-- ===== ALIMENTAZIONE ===== -->
+  <rect x="20" y="46" width="132" height="44" rx="4" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+  <text x="86" y="66" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">Alimentatore</text>
+  <text x="86" y="81" font-size="11" fill="#57606a" text-anchor="middle">12 V · 8 A</text>
+
+  <rect x="196" y="46" width="120" height="44" rx="4" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+  <text x="256" y="66" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">LM2596</text>
+  <text x="256" y="81" font-size="11" fill="#57606a" text-anchor="middle">12 V → 5,00 V</text>
+
+  <line x1="152" y1="68" x2="192" y2="68" stroke="#a76a12" stroke-width="1.4"/>
+  <polygon points="196,68 190,65 190,71" fill="#a76a12"/>
+
+  <!-- rail 12 V -->
+  <line x1="86" y1="90" x2="86" y2="110" stroke="#b3261e" stroke-width="1.6"/>
+  <line x1="86" y1="110" x2="700" y2="110" stroke="#b3261e" stroke-width="1.6"/>
+  <text x="600" y="105" font-size="11" font-weight="600" fill="#b3261e">rail 12 V</text>
+
+  <!-- rail 5 V -->
+  <line x1="256" y1="90" x2="256" y2="130" stroke="#a76a12" stroke-width="1.6"/>
+  <line x1="256" y1="130" x2="700" y2="130" stroke="#a76a12" stroke-width="1.6"/>
+  <text x="600" y="126" font-size="11" font-weight="600" fill="#a76a12">rail 5 V</text>
+
+  <!-- ===== SENSORI ===== -->
+  <text x="20" y="182" font-size="11" font-weight="600" fill="#57606a">INGRESSI</text>
+  <rect x="20" y="192" width="132" height="46" rx="4" fill="#ffffff" stroke="#57606a" stroke-width="1"/>
+  <text x="86" y="211" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">FSR402</text>
+  <text x="86" y="226" font-size="11" fill="#57606a" text-anchor="middle">respiro · analogico</text>
+
+  <rect x="20" y="266" width="132" height="46" rx="4" fill="#ffffff" stroke="#57606a" stroke-width="1"/>
+  <text x="86" y="285" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">MAX30102</text>
+  <text x="86" y="300" font-size="11" fill="#57606a" text-anchor="middle">battito · I²C 3,3 V</text>
+
+  <line x1="152" y1="215" x2="192" y2="228" stroke="#57606a" stroke-width="1.2"/>
+  <polygon points="196,230 189,228 192,222" fill="#57606a"/>
+  <line x1="152" y1="289" x2="192" y2="278" stroke="#57606a" stroke-width="1.2"/>
+  <polygon points="196,276 190,282 189,275" fill="#57606a"/>
+
+  <!-- ===== ESP32 ===== -->
+  <rect x="196" y="180" width="132" height="150" rx="5" fill="#ffffff" stroke="#1f2328" stroke-width="1.8"/>
+  <text x="262" y="206" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle">ESP32</text>
+  <text x="262" y="222" font-size="11" fill="#57606a" text-anchor="middle">WROOM-32</text>
+  <line x1="210" y1="234" x2="314" y2="234" stroke="#b8c0c8" stroke-width="1"/>
+  <text x="262" y="250" font-size="11" fill="#57606a" text-anchor="middle">core 1 · sensori</text>
+  <text x="262" y="265" font-size="11" fill="#57606a" text-anchor="middle">e attuatori</text>
+  <text x="262" y="288" font-size="11" fill="#6b4fbb" text-anchor="middle">core 0 · sintesi</text>
+  <text x="262" y="303" font-size="11" fill="#6b4fbb" text-anchor="middle">audio 22050 Hz</text>
+  <text x="262" y="322" font-size="10" fill="#57606a" text-anchor="middle">logica 3,3 V</text>
+
+  <!-- ===== LANE TATTO ===== -->
+  <text x="372" y="182" font-size="11" font-weight="600" fill="#1f7a70">TATTO · 40 Hz</text>
+  <rect x="372" y="192" width="92" height="42" rx="4" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <text x="418" y="209" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">DAC 25/26</text>
+  <text x="418" y="224" font-size="10" fill="#57606a" text-anchor="middle">+ partitore</text>
+
+  <rect x="490" y="192" width="92" height="42" rx="4" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <text x="536" y="209" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">TPA3116</text>
+  <text x="536" y="224" font-size="10" fill="#57606a" text-anchor="middle">2 × 50 W</text>
+
+  <rect x="608" y="192" width="92" height="42" rx="4" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <text x="654" y="209" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">2 × BST-2</text>
+  <text x="654" y="224" font-size="10" fill="#57606a" text-anchor="middle">4 Ω · 10–80 Hz</text>
+
+  <line x1="328" y1="213" x2="368" y2="213" stroke="#1f7a70" stroke-width="1.3"/><polygon points="372,213 366,210 366,216" fill="#1f7a70"/>
+  <line x1="464" y1="213" x2="486" y2="213" stroke="#1f7a70" stroke-width="1.3"/><polygon points="490,213 484,210 484,216" fill="#1f7a70"/>
+  <line x1="582" y1="213" x2="604" y2="213" stroke="#1f7a70" stroke-width="1.3"/><polygon points="608,213 602,210 602,216" fill="#1f7a70"/>
+  <line x1="536" y1="130" x2="536" y2="192" stroke="#b3261e" stroke-width="1.3" stroke-dasharray="4 3"/>
+
+  <!-- ===== LANE LUCE ===== -->
+  <text x="372" y="262" font-size="11" font-weight="600" fill="#2f6ea8">LUCE</text>
+  <rect x="372" y="272" width="92" height="42" rx="4" fill="#cfe0f5" stroke="#2f6ea8" stroke-width="1.2"/>
+  <text x="418" y="289" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">74HCT245</text>
+  <text x="418" y="304" font-size="10" fill="#57606a" text-anchor="middle">3,3 V → 5 V</text>
+
+  <rect x="490" y="272" width="92" height="42" rx="4" fill="#cfe0f5" stroke="#2f6ea8" stroke-width="1.2"/>
+  <text x="536" y="289" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">3 × D4184</text>
+  <text x="536" y="304" font-size="10" fill="#57606a" text-anchor="middle">MOSFET</text>
+
+  <rect x="608" y="272" width="92" height="42" rx="4" fill="#cfe0f5" stroke="#2f6ea8" stroke-width="1.2"/>
+  <text x="654" y="289" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">Striscia RGB</text>
+  <text x="654" y="304" font-size="10" fill="#57606a" text-anchor="middle">12 V · 2 m</text>
+
+  <line x1="328" y1="293" x2="368" y2="293" stroke="#2f6ea8" stroke-width="1.3"/><polygon points="372,293 366,290 366,296" fill="#2f6ea8"/>
+  <line x1="464" y1="293" x2="486" y2="293" stroke="#2f6ea8" stroke-width="1.3"/><polygon points="490,293 484,290 484,296" fill="#2f6ea8"/>
+  <line x1="582" y1="293" x2="604" y2="293" stroke="#2f6ea8" stroke-width="1.3"/><polygon points="608,293 602,290 602,296" fill="#2f6ea8"/>
+  <line x1="418" y1="130" x2="418" y2="272" stroke="#a76a12" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <line x1="654" y1="110" x2="654" y2="272" stroke="#b3261e" stroke-width="1.3" stroke-dasharray="4 3"/>
+
+  <!-- ===== LANE SUONO ===== -->
+  <text x="372" y="352" font-size="11" font-weight="600" fill="#6b4fbb">SUONO</text>
+  <rect x="372" y="362" width="92" height="42" rx="4" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.2"/>
+  <text x="418" y="379" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">PCM5102A</text>
+  <text x="418" y="394" font-size="10" fill="#57606a" text-anchor="middle">DAC I²S</text>
+
+  <rect x="490" y="362" width="92" height="42" rx="4" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.2"/>
+  <text x="536" y="379" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">Cuffie</text>
+  <text x="536" y="394" font-size="10" fill="#57606a" text-anchor="middle">o diffusore</text>
+
+  <line x1="328" y1="383" x2="368" y2="383" stroke="#6b4fbb" stroke-width="1.3"/><polygon points="372,383 366,380 366,386" fill="#6b4fbb"/>
+  <line x1="464" y1="383" x2="486" y2="383" stroke="#6b4fbb" stroke-width="1.3"/><polygon points="490,383 484,380 484,386" fill="#6b4fbb"/>
+  <text x="346" y="378" font-size="10" fill="#6b4fbb">I²S</text>
+
+  <!-- ESP32 alimentazione -->
+  <line x1="262" y1="130" x2="262" y2="180" stroke="#a76a12" stroke-width="1.3" stroke-dasharray="4 3"/>
+
+  <!-- legenda -->
+  <rect x="20" y="428" width="680" height="72" rx="6" fill="#eceff2" stroke="#cdd3d9" stroke-width="1"/>
+  <line x1="36" y1="450" x2="66" y2="450" stroke="#b3261e" stroke-width="1.6"/>
+  <text x="76" y="454" font-size="11" fill="#57606a">12 V: striscia LED e amplificatore, gli unici due carichi di potenza</text>
+  <line x1="36" y1="470" x2="66" y2="470" stroke="#a76a12" stroke-width="1.6"/>
+  <text x="76" y="474" font-size="11" fill="#57606a">5 V dall'LM2596: alimenta l'ESP32 sul pin VIN e il 74HCT245, che da lì prende i 5 V per i gate</text>
+  <text x="36" y="492" font-size="11" fill="#57606a">Il PCM5102A e il MAX30102 vivono a 3,3 V, presi dalla scheda ESP32. Tutte le masse in un unico nodo a stella.</text>
+</svg>

@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 580" width="720" height="580" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="720" height="580" fill="#f6f7f9"/>
+  <text x="20" y="26" font-size="15" font-weight="600" fill="#1f2328">Come funziona — da due sensori a tre sensi</text>
+
+  <text x="26" y="56" font-size="11" font-weight="600" fill="#57606a">SENSORI</text>
+  <text x="186" y="56" font-size="11" font-weight="600" fill="#57606a">ELABORAZIONE</text>
+  <text x="342" y="56" font-size="11" font-weight="600" fill="#57606a">GRANDEZZE</text>
+  <text x="502" y="56" font-size="11" font-weight="600" fill="#57606a">USCITE</text>
+
+  <!-- ===== SENSORI ===== -->
+  <rect x="20" y="86" width="130" height="46" rx="4" fill="#ffffff" stroke="#1f2328" stroke-width="1.3"/>
+  <text x="85" y="105" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">FSR402</text>
+  <text x="85" y="120" font-size="10" fill="#57606a" text-anchor="middle">escursione toracica</text>
+
+  <rect x="20" y="286" width="130" height="46" rx="4" fill="#ffffff" stroke="#1f2328" stroke-width="1.3"/>
+  <text x="85" y="305" font-size="12" font-weight="600" fill="#1f2328" text-anchor="middle">MAX30102</text>
+  <text x="85" y="320" font-size="10" fill="#57606a" text-anchor="middle">battito sul lobo</text>
+
+  <!-- ===== ELABORAZIONE ===== -->
+  <rect x="182" y="80" width="128" height="58" rx="4" fill="#eceff2" stroke="#57606a" stroke-width="1"/>
+  <text x="246" y="99" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">doppia EMA</text>
+  <text x="246" y="114" font-size="10" fill="#57606a" text-anchor="middle">veloce 70 ms</text>
+  <text x="246" y="128" font-size="10" fill="#57606a" text-anchor="middle">lenta 320 ms</text>
+
+  <rect x="182" y="232" width="128" height="58" rx="4" fill="#eceff2" stroke="#57606a" stroke-width="1"/>
+  <text x="246" y="251" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">picco + refrattaria</text>
+  <text x="246" y="266" font-size="10" fill="#57606a" text-anchor="middle">500 ms: tetto 120 BPM</text>
+  <text x="246" y="280" font-size="10" fill="#57606a" text-anchor="middle">→ intervallo R-R</text>
+
+  <rect x="182" y="306" width="128" height="46" rx="4" fill="#eceff2" stroke="#57606a" stroke-width="1"/>
+  <text x="246" y="324" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">moltiplicatore</text>
+  <text x="246" y="339" font-size="10" fill="#57606a" text-anchor="middle">M = round(40 / f)</text>
+
+  <rect x="182" y="380" width="128" height="58" rx="4" fill="#eceff2" stroke="#57606a" stroke-width="1"/>
+  <text x="246" y="399" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">confronto RSA</text>
+  <text x="246" y="414" font-size="10" fill="#57606a" text-anchor="middle">il cuore accelera</text>
+  <text x="246" y="428" font-size="10" fill="#57606a" text-anchor="middle">inspirando?</text>
+
+  <!-- frecce sensori -> elaborazione -->
+  <line x1="150" y1="109" x2="178" y2="109" stroke="#57606a" stroke-width="1.3"/><polygon points="182,109 176,106 176,112" fill="#57606a"/>
+  <line x1="150" y1="309" x2="178" y2="285" stroke="#57606a" stroke-width="1.3"/><polygon points="182,283 175,283 179,289" fill="#57606a"/>
+  <line x1="310" y1="270" x2="322" y2="270" stroke="#57606a" stroke-width="1.2"/>
+  <line x1="322" y1="270" x2="322" y2="329" stroke="#57606a" stroke-width="1.2"/>
+  <line x1="322" y1="329" x2="310" y2="329" stroke="#57606a" stroke-width="1.2"/>
+  <polygon points="306,329 312,326 312,332" fill="#57606a"/>
+
+  <!-- direzione e R-R verso confronto RSA -->
+  <line x1="246" y1="138" x2="246" y2="150" stroke="#57606a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="166" y1="150" x2="246" y2="150" stroke="#57606a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="166" y1="150" x2="166" y2="409" stroke="#57606a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="166" y1="409" x2="178" y2="409" stroke="#57606a" stroke-width="1" stroke-dasharray="3 3"/>
+  <polygon points="182,409 176,406 176,412" fill="#57606a"/>
+  <line x1="246" y1="290" x2="246" y2="306" stroke="#57606a" stroke-width="1.2"/>
+  <line x1="330" y1="262" x2="342" y2="262" stroke="#57606a" stroke-width="1"/>
+
+  <!-- ===== GRANDEZZE ===== -->
+  <rect x="338" y="74" width="132" height="30" rx="15" fill="#ffffff" stroke="#1f2328" stroke-width="1.3"/>
+  <text x="404" y="94" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">profondità 0–1</text>
+
+  <rect x="338" y="112" width="132" height="30" rx="15" fill="#ffffff" stroke="#1f2328" stroke-width="1.3"/>
+  <text x="404" y="132" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">direzione 0–1</text>
+
+  <rect x="338" y="246" width="132" height="30" rx="15" fill="#ffffff" stroke="#1f2328" stroke-width="1.3"/>
+  <text x="404" y="266" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">BPM</text>
+
+  <rect x="338" y="312" width="132" height="30" rx="15" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.3"/>
+  <text x="404" y="332" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">risonanza 30–50 Hz</text>
+
+  <rect x="338" y="394" width="132" height="30" rx="15" fill="#cfe0f5" stroke="#2f6ea8" stroke-width="1.3"/>
+  <text x="404" y="414" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">coerenza 0–1</text>
+
+  <line x1="310" y1="100" x2="334" y2="90" stroke="#57606a" stroke-width="1.2"/><polygon points="338,89 331,88 334,94" fill="#57606a"/>
+  <line x1="310" y1="118" x2="334" y2="127" stroke="#57606a" stroke-width="1.2"/><polygon points="338,128 331,128 335,122" fill="#57606a"/>
+  <line x1="310" y1="261" x2="334" y2="261" stroke="#57606a" stroke-width="1.2"/><polygon points="338,261 332,258 332,264" fill="#57606a"/>
+  <line x1="310" y1="327" x2="334" y2="327" stroke="#57606a" stroke-width="1.2"/><polygon points="338,327 332,324 332,330" fill="#57606a"/>
+  <line x1="310" y1="409" x2="334" y2="409" stroke="#57606a" stroke-width="1.2"/><polygon points="338,409 332,406 332,412" fill="#57606a"/>
+
+  <!-- ===== USCITE ===== -->
+  <rect x="498" y="74" width="204" height="90" rx="5" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.4"/>
+  <text x="512" y="94" font-size="12" font-weight="600" fill="#1f7a70">TATTO</text>
+  <text x="512" y="112" font-size="10.5" fill="#1f2328">profondità → ampiezza</text>
+  <text x="512" y="128" font-size="10.5" fill="#1f2328">direzione → sterno ↔ addome</text>
+  <text x="512" y="144" font-size="10.5" fill="#1f2328">risonanza → frequenza portante</text>
+  <text x="512" y="158" font-size="10" fill="#57606a">fase agganciata al picco sistolico</text>
+
+  <rect x="498" y="184" width="204" height="78" rx="5" fill="#cfe0f5" stroke="#2f6ea8" stroke-width="1.4"/>
+  <text x="512" y="204" font-size="12" font-weight="600" fill="#2f6ea8">LUCE</text>
+  <text x="512" y="222" font-size="10.5" fill="#1f2328">profondità → luminosità</text>
+  <text x="512" y="238" font-size="10.5" fill="#1f2328">direzione → ambra ↔ blu</text>
+  <text x="512" y="254" font-size="10.5" font-weight="600" fill="#1f2328">coerenza → saturazione</text>
+
+  <rect x="498" y="282" width="204" height="96" rx="5" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.4"/>
+  <text x="512" y="302" font-size="12" font-weight="600" fill="#6b4fbb">SUONO</text>
+  <text x="512" y="320" font-size="10.5" fill="#1f2328">profondità → volume drone,</text>
+  <text x="512" y="335" font-size="10.5" fill="#1f2328">e risacca all'inverso</text>
+  <text x="512" y="352" font-size="10.5" fill="#1f2328">direzione → brillantezza filtro</text>
+  <text x="512" y="370" font-size="10.5" fill="#1f2328">inversione → campana</text>
+
+  <line x1="470" y1="119" x2="494" y2="119" stroke="#1f7a70" stroke-width="1.4"/><polygon points="498,119 492,116 492,122" fill="#1f7a70"/>
+  <line x1="470" y1="223" x2="494" y2="223" stroke="#2f6ea8" stroke-width="1.4"/><polygon points="498,223 492,220 492,226" fill="#2f6ea8"/>
+  <line x1="470" y1="330" x2="494" y2="330" stroke="#6b4fbb" stroke-width="1.4"/><polygon points="498,330 492,327 492,333" fill="#6b4fbb"/>
+
+  <!-- anello di ritorno -->
+  <path d="M600 378 L600 452 L85 452 L85 340" fill="none" stroke="#a76a12" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <polygon points="85,336 82,343 88,343" fill="#a76a12"/>
+  <text x="342" y="447" font-size="11" font-weight="600" fill="#a76a12" text-anchor="middle">l'anello si chiude sul corpo: luce, tatto e suono cambiano il respiro che i sensori stanno leggendo</text>
+
+  <!-- nota RSA -->
+  <rect x="20" y="472" width="682" height="90" rx="6" fill="#eceff2" stroke="#cdd3d9" stroke-width="1"/>
+  <text x="36" y="493" font-size="12" font-weight="600" fill="#1f2328">La coerenza è l'unica grandezza che usa entrambi i sensori</text>
+  <text x="36" y="513" font-size="11" fill="#57606a">In inspirazione il cuore accelera, in espirazione rallenta: è l'aritmia sinusale respiratoria. Il firmware confronta a ogni battito</text>
+  <text x="36" y="530" font-size="11" fill="#57606a">la direzione dell'intervallo R-R con quella del respiro e accumula la concordanza. Cuore e respiro fuori fase sbiancano il colore.</text>
+  <text x="36" y="551" font-size="11" fill="#57606a">È un <tspan font-weight="600">indicatore costruito per questo progetto</tspan>, non una misura tarata: non corrisponde alle misure spettrali della letteratura HRV.</text>
+</svg>
