@@ -53,11 +53,21 @@
   <line x1="272" y1="286" x2="272" y2="266" stroke="#1f7a70" stroke-width="1"/>
   <polygon points="272,262 269,268 275,268" fill="#1f7a70"/>
 
-  <!-- scivolamento -->
-  <line x1="186" y1="223" x2="236" y2="230" stroke="#6b4fbb" stroke-width="1" stroke-dasharray="4 3"/>
-  <polygon points="182,222 188,219 187,225" fill="#6b4fbb"/>
-  <polygon points="240,230 234,233 235,227" fill="#6b4fbb"/>
-  <text x="211" y="214" font-size="12" fill="#6b4fbb" text-anchor="middle">scivola col respiro</text>
+  <!-- quota fra i motorini -->
+  <line x1="178" y1="232" x2="178" y2="216" stroke="#6b4fbb" stroke-width="0.8"/>
+  <line x1="244" y1="238" x2="244" y2="216" stroke="#6b4fbb" stroke-width="0.8"/>
+  <line x1="182" y1="221" x2="240" y2="221" stroke="#6b4fbb" stroke-width="1"/>
+  <polygon points="178,221 184,218 184,224" fill="#6b4fbb"/>
+  <polygon points="244,221 238,218 238,224" fill="#6b4fbb"/>
+  <text x="211" y="214" font-size="12" font-weight="600" fill="#6b4fbb" text-anchor="middle">15–20 cm</text>
+  <text x="211" y="200" font-size="11" fill="#6b4fbb" text-anchor="middle">oltre, i due punti non si fondono piu'</text>
+  <text x="211" y="188" font-size="11" fill="#6b4fbb" text-anchor="middle">e si sentono due motorini separati</text>
+
+  <!-- quota fra i trasduttori -->
+  <line x1="149" y1="320" x2="268" y2="320" stroke="#1f7a70" stroke-width="1"/>
+  <polygon points="145,320 151,317 151,323" fill="#1f7a70"/>
+  <polygon points="272,320 266,317 266,323" fill="#1f7a70"/>
+  <text x="208" y="316" font-size="12" fill="#1f7a70" text-anchor="middle">≈ 40 cm</text>
 
   <!-- leader -->
   <g stroke="#8a9199" stroke-width="0.8" stroke-dasharray="3 3" fill="none">
@@ -67,7 +77,7 @@
   </g>
   <text x="478" y="116" font-size="14" font-weight="600" fill="#6b4fbb">Motorini leggeri</text>
   <text x="478" y="131" font-size="12" fill="#57606a">10 mm, pochi grammi</text>
-  <text x="478" y="146" font-size="12" fill="#57606a">sterno e addome</text>
+  <text x="478" y="146" font-size="12" fill="#57606a">basso sterno e ombelico</text>
   <text x="478" y="208" font-size="14" font-weight="600" fill="#1f7a70">BST-2 sotto il pannello</text>
   <text x="478" y="223" font-size="12" fill="#57606a">1,18 kg ciascuno, ma</text>
   <text x="478" y="238" font-size="12" fill="#57606a">non li porti addosso</text>
