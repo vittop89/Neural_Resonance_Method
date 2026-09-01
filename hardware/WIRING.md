@@ -200,7 +200,7 @@ Sotto i 12 mm il pannello flette e assorbe l'energia invece di trasmetterla.
 
 **3. Due pannelli separati**, uno per trasduttore, circa 40 × 40 cm ciascuno. Si spostano e si ripongono meglio, ma tendono a slittare.
 
-In tutti i casi, la distanza fra i due punti diventa **50 cm invece dei 20 fra sterno e addome**: la distinzione fra alto e basso è più netta che nella disposizione indossata.
+In tutti i casi, la distanza fra i due punti diventa **circa 40 cm invece dei 20-25 fra sterno e addome**: la distinzione fra alto e basso è più netta che nella disposizione indossata.
 
 ### Comfort contro trasmissione: la stessa gommapiuma, due effetti opposti
 
@@ -223,7 +223,33 @@ Un materasso o una gommapiuma morbida sotto un corpo hanno $f_0$ dell'ordine di 
 | Tappetino da campeggio | 20–40 mm | attenua parecchio |
 | Materasso, cuscino morbido | > 50 mm | isola: non senti quasi niente |
 
-**Imbottisci dove non c'è il trasduttore.** Testa, nuca e ginocchia possono avere tutto il cuscino che vuoi: lì non passa segnale. Sopra le due zone dei trasduttori serve invece contatto sottile e fermo. È una soluzione a chiazze, non uniforme, e funziona.
+### La soluzione da sdraiati
+
+Da supini il fastidio delle sessioni lunghe **non viene dai punti che portano il peso**: viene dalle curve che restano sospese. La lordosi lombare non appoggia e la muscolatura lavora per tenerla; il collo idem; e le gambe distese tirano sul bacino peggiorando la lordosi.
+
+I due punti dei trasduttori — **scapole e osso sacro** — sono invece appoggiati, e appoggiati su osso. Con un tappetino sottile sono tollerabili per un'ora.
+
+La conseguenza è comoda: **le zone da imbottire e le zone da accoppiare non si sovrappongono.**
+
+| Zona | Cosa mettere | Perché |
+|---|---|---|
+| Nuca | cuscino basso, 3–5 cm | sostiene la curva cervicale. Nessun trasduttore lì |
+| Scapole | solo tappetino 5–10 mm | **zona trasduttore alto**: contatto osseo diretto |
+| Lombare | niente | con le ginocchia sollevate si appiattisce da sola e appoggia |
+| Osso sacro | solo tappetino 5–10 mm | **zona trasduttore basso**: il punto di accoppiamento migliore da supini |
+| Ginocchia | rullo o cuscino spesso | toglie il carico lombare. Nessun trasduttore lì |
+
+Il rullo sotto le ginocchia è la mossa che risolve davvero: è l'assetto standard del savasana e della fisioterapia, e flettendo leggermente le anche fa appoggiare il sacro con più decisione sul pannello — quindi **migliora anche l'accoppiamento del trasduttore basso**, invece di peggiorarlo.
+
+### La struttura dei LED va tenuta separata
+
+Da supini si guarda in alto, quindi la striscia LED non può stare nel campo visivo: sarebbe una sorgente puntiforme abbagliante, e con gli occhi chiusi non funzionerebbe comunque.
+
+**Punta i LED al soffitto.** Il soffitto diventa un diffusore grande quanto la stanza: nessun abbagliamento, tutto il campo visivo bagnato di colore, e la luce passa anche attraverso le palpebre chiuse — che è la condizione in cui si medita davvero. Bastano i 1–2 metri di striscia già in distinta, su una piantana bassa o una tavoletta inclinata dietro la testa.
+
+> **La struttura dei LED non va avvitata al pannello.** Il pannello vibra a 40 Hz di proposito: qualunque cosa gli sia fissata rigidamente vibra con lui, e un profilo di alluminio o una tavoletta si mettono a ronzare in modo udibile. Il supporto luci sta per terra da solo, staccato. Non serve nessun collegamento meccanico: alla striscia arrivano solo tre fili dalla scatola.
+
+Stessa attenzione per i cavi: falli correre lungo un bordo del pannello, non dove ci si sdraia.
 
 ### Da seduti, che per la meditazione è meglio
 
