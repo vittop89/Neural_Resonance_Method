@@ -92,4 +92,6 @@ Quello che il progetto fa in modo documentabile è biofeedback respiratorio, che
 Firmware: **MIT** (vedi [LICENSE](LICENSE)).
 Documentazione, schemi e distinta: **CC BY-SA 4.0**.
 
+Avvertenze legali e controindicazioni: [NOTICE.md](NOTICE.md).
+
 Uso didattico e personale incoraggiato. Se lo porti in classe e funziona — o se non funziona — mi fa piacere saperlo.

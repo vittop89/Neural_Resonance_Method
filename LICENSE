@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOT A MEDICAL DEVICE. This project is an educational electronics and signal
-processing exercise. It is not intended to diagnose, treat, cure or prevent
-any disease or condition. See SAFETY.md for contraindications, including an
-absolute contraindication for people with implanted cardiac devices.
-
-Documentation, schematics and bill of materials in this repository are
-licensed under CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
