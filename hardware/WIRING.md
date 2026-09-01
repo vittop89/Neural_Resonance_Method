@@ -185,6 +185,8 @@ Il motivo non è solo il peso. Un trasduttore inerziale funziona **reagendo cont
 
 **È una conseguenza della fisica, non del prodotto.** Per muovere massa a 40 Hz servono massa e escursione: un trasduttore leggero non può erogare forza apprezzabile a quella frequenza. Il peso *è* la prestazione. Chi volesse qualcosa di indossabile deve rinunciare ai 40 Hz reali e tornare a un attuatore che modula solo l'intensità — cioè alla `v1`.
 
+![Sezione laterale del pannello: persona sdraiata sopra, trasduttori bullonati sotto, blocchi di gommapiuma che tengono sollevato il tutto; e vista del pannello dal basso con le posizioni dei quattro bulloni](../docs/img/montaggio-pannello.svg)
+
 ### Tre modi di montarli, in ordine di fatica
 
 **1. Mobile che hai già — zero costruzione.** Quattro viti da legno su una superficie piana e rigida:
@@ -241,6 +243,8 @@ La conseguenza è comoda: **le zone da imbottire e le zone da accoppiare non si 
 
 Il rullo sotto le ginocchia è la mossa che risolve davvero: è l'assetto standard del savasana e della fisioterapia, e flettendo leggermente le anche fa appoggiare il sacro con più decisione sul pannello — quindi **migliora anche l'accoppiamento del trasduttore basso**, invece di peggiorarlo.
 
+![Postazione supina completa: piantana LED separata che illumina il soffitto, cuscino sotto la nuca, rullo sotto le ginocchia, trasduttori sotto il pannello all'altezza di scapole e osso sacro](../docs/img/postazione-supina.svg)
+
 ### La struttura dei LED va tenuta separata
 
 Da supini si guarda in alto, quindi la striscia LED non può stare nel campo visivo: sarebbe una sorgente puntiforme abbagliante, e con gli occhi chiusi non funzionerebbe comunque.
@@ -265,6 +269,8 @@ Uno **sgabello rigido o una panchetta da meditazione**, con un trasduttore avvit
 Per sessioni lunghe questa è la disposizione da preferire. Il pannello da sdraiati resta valido per sessioni brevi o per chi medita in posizione supina.
 
 ### Disposizione C — ibrida: il «cosa» da sotto, il «dove» da sopra
+
+![Disposizione ibrida: i trasduttori sotto il pannello portano la portante a 40 Hz, due micromotori sulla fascia toracica portano lo scivolamento sterno-addome col respiro](../docs/img/disposizione-ibrida.svg)
 
 Le due funzioni che finora stavano insieme sui trasduttori sono in realtà separabili, e hanno bisogni opposti.
 

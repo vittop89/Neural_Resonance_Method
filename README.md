@@ -57,6 +57,8 @@ Ed è una conseguenza della fisica, non del prodotto: per muovere massa a 40 Hz 
 | **B · Pannello** | compensato o MDF 15–18 mm, 40 × 90 cm, trasduttori bullonati sotto, ci si sdraia sopra | un taglio in ferramenta |
 | **C · Ibrida** | i 40 Hz restano sotto la schiena; due micromotori sulla fascia toracica portano lo scivolamento sterno ↔ addome | come B, più 23,98 € di componenti |
 
+![Postazione supina: piantana LED che illumina il soffitto, appoggi sotto nuca e ginocchia, trasduttori bullonati sotto il pannello](docs/img/postazione-supina.svg)
+
 La **disposizione C** separa due funzioni che hanno bisogni opposti. La portante a 40 Hz vuole forza, quindi massa, quindi un appoggio rigido: va sotto la schiena, dove la massa non costa niente. Lo scivolamento alto/basso col respiro è invece una rampa lenta di intensità, e la esegue benissimo un motorino da pochi grammi. Così si sente la vibrazione muoversi sul torace **senza caricare di massa la gabbia toracica che il dispositivo sta misurando** — che sarebbe un confondimento della misura, non solo un fastidio.
 
 Sul firmware è un solo `#define`:

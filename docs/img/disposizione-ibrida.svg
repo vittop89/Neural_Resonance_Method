@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" width="720" height="500" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="500" fill="#f6f7f9"/>
+
+  <text x="20" y="26" font-size="15" font-weight="600" fill="#1f2328">Disposizione ibrida — il «cosa» da sotto, il «dove» da sopra</text>
+
+  <!-- pavimento -->
+  <line x1="30" y1="330" x2="560" y2="330" stroke="#1f2328" stroke-width="1.6"/>
+  <g stroke="#b8c0c8" stroke-width="1">
+    <line x1="34" y1="340" x2="44" y2="330"/><line x1="64" y1="340" x2="74" y2="330"/>
+    <line x1="94" y1="340" x2="104" y2="330"/><line x1="124" y1="340" x2="134" y2="330"/>
+    <line x1="154" y1="340" x2="164" y2="330"/><line x1="184" y1="340" x2="194" y2="330"/>
+    <line x1="214" y1="340" x2="224" y2="330"/><line x1="244" y1="340" x2="254" y2="330"/>
+    <line x1="274" y1="340" x2="284" y2="330"/><line x1="304" y1="340" x2="314" y2="330"/>
+    <line x1="334" y1="340" x2="344" y2="330"/><line x1="364" y1="340" x2="374" y2="330"/>
+    <line x1="394" y1="340" x2="404" y2="330"/><line x1="424" y1="340" x2="434" y2="330"/>
+    <line x1="454" y1="340" x2="464" y2="330"/><line x1="484" y1="340" x2="494" y2="330"/>
+    <line x1="514" y1="340" x2="524" y2="330"/><line x1="544" y1="340" x2="554" y2="330"/>
+  </g>
+
+  <!-- gommapiuma -->
+  <rect x="90" y="288" width="27" height="42" rx="3" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+  <rect x="355" y="288" width="27" height="42" rx="3" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+
+  <!-- BST-2 -->
+  <rect x="123" y="288" width="44" height="19" rx="3" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <rect x="250" y="288" width="44" height="19" rx="3" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+
+  <!-- pannello e tappetino -->
+  <rect x="85" y="280" width="305" height="8" fill="#e6e9ec" stroke="#57606a" stroke-width="1"/>
+  <rect x="85" y="274" width="305" height="6" rx="2" fill="#cdd3d9"/>
+
+  <!-- cuscino e rullo -->
+  <rect x="88" y="264" width="40" height="10" rx="5" fill="#cdd3d9"/>
+  <ellipse cx="322" cy="261" rx="27" ry="14" fill="#cdd3d9"/>
+
+  <!-- persona -->
+  <circle cx="108" cy="251" r="13" fill="#aab2ba"/>
+  <path d="M122,264 C150,244 200,242 250,246 C268,248 278,252 288,258 L318,238 L352,268 L352,274 L288,274 C270,274 150,274 122,274 Z" fill="#aab2ba"/>
+
+  <!-- fascia toracica -->
+  <path d="M162,272 C160,250 180,240 186,240" fill="none" stroke="#57606a" stroke-width="1.2"/>
+  <path d="M232,274 C232,254 244,246 250,246" fill="none" stroke="#57606a" stroke-width="1.2"/>
+
+  <!-- motorini -->
+  <rect x="168" y="234" width="20" height="9" rx="2" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.2"/>
+  <rect x="234" y="240" width="20" height="9" rx="2" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.2"/>
+
+  <!-- 40 Hz sale -->
+  <path d="M139 284 q4-5 8 0 q4 5 8 0" fill="none" stroke="#1f7a70" stroke-width="1.2"/>
+  <path d="M266 284 q4-5 8 0 q4 5 8 0" fill="none" stroke="#1f7a70" stroke-width="1.2"/>
+  <line x1="145" y1="286" x2="145" y2="270" stroke="#1f7a70" stroke-width="1"/>
+  <polygon points="145,266 142,272 148,272" fill="#1f7a70"/>
+  <line x1="272" y1="286" x2="272" y2="266" stroke="#1f7a70" stroke-width="1"/>
+  <polygon points="272,262 269,268 275,268" fill="#1f7a70"/>
+
+  <!-- scivolamento -->
+  <line x1="186" y1="223" x2="236" y2="230" stroke="#6b4fbb" stroke-width="1" stroke-dasharray="4 3"/>
+  <polygon points="182,222 188,219 187,225" fill="#6b4fbb"/>
+  <polygon points="240,230 234,233 235,227" fill="#6b4fbb"/>
+  <text x="211" y="214" font-size="12" fill="#6b4fbb" text-anchor="middle">scivola col respiro</text>
+
+  <!-- leader -->
+  <g stroke="#8a9199" stroke-width="0.8" stroke-dasharray="3 3" fill="none">
+    <line x1="254" y1="244" x2="470" y2="120"/>
+    <line x1="294" y1="297" x2="470" y2="212"/>
+    <line x1="250" y1="252" x2="470" y2="278"/>
+  </g>
+  <text x="478" y="116" font-size="14" font-weight="600" fill="#6b4fbb">Motorini leggeri</text>
+  <text x="478" y="131" font-size="12" fill="#57606a">10 mm, pochi grammi</text>
+  <text x="478" y="146" font-size="12" fill="#57606a">sterno e addome</text>
+  <text x="478" y="208" font-size="14" font-weight="600" fill="#1f7a70">BST-2 sotto il pannello</text>
+  <text x="478" y="223" font-size="12" fill="#57606a">1,18 kg ciascuno, ma</text>
+  <text x="478" y="238" font-size="12" fill="#57606a">non li porti addosso</text>
+  <text x="478" y="274" font-size="14" font-weight="600" fill="#1f2328">Fascia toracica</text>
+  <text x="478" y="289" font-size="12" fill="#57606a">FSR + i due motorini</text>
+
+  <!-- tabella funzioni -->
+  <rect x="20" y="352" width="680" height="132" rx="6" fill="#eceff2" stroke="#cdd3d9" stroke-width="1"/>
+
+  <rect x="36" y="370" width="14" height="14" rx="3" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <text x="60" y="382" font-size="14" font-weight="600" fill="#1f2328">Da sotto la schiena · il COSA</text>
+  <text x="60" y="402" font-size="12" fill="#57606a">Portante a 40 Hz agganciata al battito. Sempre presente, posizione fissa.</text>
+  <text x="60" y="419" font-size="12" fill="#57606a">Serve forza, quindi massa: sul pannello la massa non costa niente.</text>
+
+  <rect x="36" y="437" width="14" height="14" rx="3" fill="#e2dcf7" stroke="#6b4fbb" stroke-width="1.2"/>
+  <text x="60" y="449" font-size="14" font-weight="600" fill="#1f2328">Dalla fascia sul torso · il DOVE</text>
+  <text x="60" y="469" font-size="12" fill="#57606a">Intensità lenta che scivola da sterno ad addome. Nessun bisogno di 40 Hz:</text>
+  <text x="60" y="486" font-size="12" fill="#57606a">bastano pochi grammi, e il torace resta libero di respirare.</text>
+</svg>

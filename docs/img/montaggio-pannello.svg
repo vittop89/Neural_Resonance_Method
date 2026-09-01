@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 620" width="720" height="620" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="620" fill="#f6f7f9"/>
+
+  <!-- ================= SEZIONE LATERALE ================= -->
+  <text x="20" y="28" font-size="15" font-weight="600" fill="#1f2328">Sezione laterale — come sta in piedi</text>
+
+  <!-- pavimento -->
+  <line x1="20" y1="212" x2="500" y2="212" stroke="#1f2328" stroke-width="1.6"/>
+  <g stroke="#b8c0c8" stroke-width="1">
+    <line x1="24" y1="222" x2="34" y2="212"/><line x1="44" y1="222" x2="54" y2="212"/>
+    <line x1="64" y1="222" x2="74" y2="212"/><line x1="84" y1="222" x2="94" y2="212"/>
+    <line x1="104" y1="222" x2="114" y2="212"/><line x1="124" y1="222" x2="134" y2="212"/>
+    <line x1="144" y1="222" x2="154" y2="212"/><line x1="164" y1="222" x2="174" y2="212"/>
+    <line x1="184" y1="222" x2="194" y2="212"/><line x1="204" y1="222" x2="214" y2="212"/>
+    <line x1="224" y1="222" x2="234" y2="212"/><line x1="244" y1="222" x2="254" y2="212"/>
+    <line x1="264" y1="222" x2="274" y2="212"/><line x1="284" y1="222" x2="294" y2="212"/>
+    <line x1="304" y1="222" x2="314" y2="212"/><line x1="324" y1="222" x2="334" y2="212"/>
+    <line x1="344" y1="222" x2="354" y2="212"/><line x1="364" y1="222" x2="374" y2="212"/>
+    <line x1="384" y1="222" x2="394" y2="212"/><line x1="404" y1="222" x2="414" y2="212"/>
+    <line x1="424" y1="222" x2="434" y2="212"/><line x1="444" y1="222" x2="454" y2="212"/>
+    <line x1="464" y1="222" x2="474" y2="212"/><line x1="484" y1="222" x2="494" y2="212"/>
+  </g>
+
+  <!-- gommapiuma -->
+  <rect x="66" y="166" width="30" height="46" rx="3" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+  <rect x="424" y="166" width="30" height="46" rx="3" fill="#f7e6c8" stroke="#a76a12" stroke-width="1.2"/>
+
+  <!-- trasduttori -->
+  <rect x="110" y="166" width="58" height="26" rx="3" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <rect x="332" y="166" width="58" height="26" rx="3" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.2"/>
+  <path d="M132 162 q4-5 8 0 q4 5 8 0" fill="none" stroke="#1f7a70" stroke-width="1.2"/>
+  <path d="M354 162 q4-5 8 0 q4 5 8 0" fill="none" stroke="#1f7a70" stroke-width="1.2"/>
+
+  <!-- pannello e tappetino -->
+  <rect x="60" y="158" width="400" height="8" fill="#e6e9ec" stroke="#57606a" stroke-width="1"/>
+  <rect x="60" y="151" width="400" height="7" rx="2" fill="#cdd3d9"/>
+
+  <!-- cuscino e persona -->
+  <rect x="22" y="140" width="38" height="11" rx="5" fill="#cdd3d9"/>
+  <circle cx="41" cy="128" r="12" fill="#aab2ba"/>
+  <path d="M56,150 C74,126 112,122 164,124 C224,127 268,132 318,138 C374,144 428,147 476,150 L476,151 L56,151 Z" fill="#aab2ba"/>
+
+  <!-- quota spazio libero -->
+  <line x1="288" y1="194" x2="288" y2="210" stroke="#57606a" stroke-width="1"/>
+  <polygon points="288,192 285,198 291,198" fill="#57606a"/>
+  <polygon points="288,212 285,206 291,206" fill="#57606a"/>
+  <text x="298" y="207" font-size="12" fill="#57606a">35 mm di aria</text>
+
+  <!-- leader -->
+  <g stroke="#8a9199" stroke-width="0.8" stroke-dasharray="3 3" fill="none">
+    <line x1="300" y1="134" x2="508" y2="96"/>
+    <line x1="240" y1="154" x2="508" y2="124"/>
+    <line x1="240" y1="162" x2="508" y2="152"/>
+    <line x1="168" y1="179" x2="508" y2="180"/>
+    <line x1="454" y1="189" x2="508" y2="212"/>
+  </g>
+  <text x="516" y="100" font-size="14" font-weight="600" fill="#1f2328">Persona sdraiata</text>
+  <text x="516" y="128" font-size="12" fill="#57606a">Tappetino sottile</text>
+  <text x="516" y="156" font-size="14" font-weight="600" fill="#1f2328">Pannello 15–18 mm</text>
+  <text x="516" y="184" font-size="14" font-weight="600" fill="#1f7a70">Trasduttore</text>
+  <text x="516" y="199" font-size="12" fill="#57606a">bullonato sotto</text>
+  <text x="516" y="226" font-size="14" font-weight="600" fill="#a76a12">Gommapiuma</text>
+  <text x="516" y="241" font-size="12" fill="#57606a">alta ≥ 80 mm</text>
+
+  <!-- nota -->
+  <rect x="20" y="248" width="680" height="46" rx="6" fill="#eceff2" stroke="#cdd3d9" stroke-width="1"/>
+  <text x="34" y="268" font-size="12" fill="#57606a">Il trasduttore è alto 55 mm. Con blocchi da 80 mm resta sospeso e non tocca mai il pavimento: se lo toccasse,</text>
+  <text x="34" y="284" font-size="12" fill="#57606a">il pavimento assorbirebbe la vibrazione e la trasmetterebbe alla struttura dell'edificio.</text>
+
+  <!-- ================= PANNELLO DAL BASSO ================= -->
+  <text x="20" y="336" font-size="15" font-weight="600" fill="#1f2328">Il pannello visto da sotto — dove vanno i quattro bulloni</text>
+
+  <rect x="60" y="360" width="400" height="178" rx="3" fill="#e6e9ec" stroke="#57606a" stroke-width="1"/>
+
+  <g stroke="#a76a12" stroke-width="1" stroke-dasharray="4 3" fill="#f7e6c8">
+    <rect x="66" y="366" width="30" height="30" rx="3"/>
+    <rect x="424" y="366" width="30" height="30" rx="3"/>
+    <rect x="66" y="502" width="30" height="30" rx="3"/>
+    <rect x="424" y="502" width="30" height="30" rx="3"/>
+  </g>
+
+  <circle cx="139" cy="449" r="29" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.4"/>
+  <circle cx="361" cy="449" r="29" fill="#cfe9e5" stroke="#1f7a70" stroke-width="1.4"/>
+  <g fill="#1f2328">
+    <circle cx="111" cy="421" r="3"/><circle cx="167" cy="421" r="3"/>
+    <circle cx="111" cy="477" r="3"/><circle cx="167" cy="477" r="3"/>
+    <circle cx="333" cy="421" r="3"/><circle cx="389" cy="421" r="3"/>
+    <circle cx="333" cy="477" r="3"/><circle cx="389" cy="477" r="3"/>
+  </g>
+
+  <!-- quote -->
+  <line x1="143" y1="559" x2="357" y2="559" stroke="#57606a" stroke-width="1"/>
+  <polygon points="139,559 145,556 145,562" fill="#57606a"/>
+  <polygon points="361,559 355,556 355,562" fill="#57606a"/>
+  <text x="250" y="554" font-size="12" fill="#57606a" text-anchor="middle">≈ 40 cm</text>
+
+  <line x1="64" y1="589" x2="456" y2="589" stroke="#57606a" stroke-width="1"/>
+  <polygon points="60,589 66,586 66,592" fill="#57606a"/>
+  <polygon points="460,589 454,586 454,592" fill="#57606a"/>
+  <text x="260" y="584" font-size="12" fill="#57606a" text-anchor="middle">90 cm</text>
+
+  <line x1="478" y1="364" x2="478" y2="534" stroke="#57606a" stroke-width="1"/>
+  <polygon points="478,360 475,366 481,366" fill="#57606a"/>
+  <polygon points="478,538 475,532 481,532" fill="#57606a"/>
+  <text x="486" y="453" font-size="12" fill="#57606a">40 cm</text>
+
+  <g stroke="#8a9199" stroke-width="0.8" stroke-dasharray="3 3" fill="none">
+    <line x1="139" y1="420" x2="540" y2="382"/>
+    <line x1="361" y1="478" x2="540" y2="466"/>
+    <line x1="96" y1="381" x2="540" y2="514"/>
+  </g>
+  <text x="548" y="378" font-size="14" font-weight="600" fill="#1f7a70">Alto</text>
+  <text x="548" y="393" font-size="12" fill="#57606a">sotto le scapole</text>
+  <text x="548" y="462" font-size="14" font-weight="600" fill="#1f7a70">Basso</text>
+  <text x="548" y="477" font-size="12" fill="#57606a">sotto il bacino</text>
+  <text x="548" y="518" font-size="14" font-weight="600" fill="#a76a12">Gommapiuma</text>
+  <text x="548" y="533" font-size="12" fill="#57606a">ai quattro angoli</text>
+
+  <text x="20" y="612" font-size="12" fill="#57606a">I quattro fori di ogni trasduttore stanno su un quadrato di 127 mm di lato: la misura è fissata dal BST-2.</text>
+</svg>
