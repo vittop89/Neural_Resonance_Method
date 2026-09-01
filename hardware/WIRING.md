@@ -179,11 +179,38 @@ Tieni i cavi del PPG lontani da quelli che vanno ai trasduttori, incrociali a 90
 
 ### I trasduttori non si indossano
 
-Il BST-2 pesa **1,18 kg** ciascuno, misura 131 mm di diametro per 55 mm, e ha quattro fori di fissaggio con **interasse 127 mm**. La scheda tecnica dice "facile da installare su qualsiasi superficie piana": un trasduttore inerziale funziona reagendo contro la propria massa, e ha bisogno di una superficie rigida a cui trasferire l'energia.
+Il BST-2 pesa **1,18 kg** ciascuno, misura 131 mm di diametro per 55 mm, e ha quattro fori di fissaggio con **interasse 127 mm**. La scheda tecnica dice "facile da installare su qualsiasi superficie piana".
 
-**Disposizione:** un pannello di compensato o MDF da 15–18 mm, circa 40 × 90 cm. I due trasduttori si bullonano *sotto*: uno all'altezza delle scapole, uno all'altezza del bacino. Ci si sdraia sopra con un tappetino sottile in mezzo. Alto e basso restano perfettamente distinguibili — sono cinquanta centimetri di distanza — e non si porta niente addosso: sulla fascia resta solo l'FSR, che pesa niente.
+Il motivo non è solo il peso. Un trasduttore inerziale funziona **reagendo contro la propria massa**: ha bisogno di una superficie rigida a cui trasferire l'energia. Appoggiato sulla pelle, il tessuto molle assorbe quasi tutto. Questi oggetti sono progettati per essere avvitati ai mobili — è il loro mercato d'origine.
 
-I cavi del BST-2 sono **già attaccati e lunghi 61 cm**: dal pannello alla scatola potrebbero non bastare.
+**È una conseguenza della fisica, non del prodotto.** Per muovere massa a 40 Hz servono massa e escursione: un trasduttore leggero non può erogare forza apprezzabile a quella frequenza. Il peso *è* la prestazione. Chi volesse qualcosa di indossabile deve rinunciare ai 40 Hz reali e tornare a un attuatore che modula solo l'intensità — cioè alla `v1`.
+
+### Tre modi di montarli, in ordine di fatica
+
+**1. Mobile che hai già — zero costruzione.** Quattro viti da legno su una superficie piana e rigida:
+- sotto la seduta e dietro lo schienale di una **sedia di legno**
+- su due **doghe del letto**, all'altezza delle spalle e del bacino
+- sotto un **panchetto da meditazione** o una tavola di legno massello
+
+Serve solo che il legno sia spesso e non flessibile.
+
+**2. Pannello dedicato.** Compensato o MDF da **15–18 mm**, circa **40 × 90 cm**, tagliato in ferramenta. I trasduttori si bullonano *sotto*: uno all'altezza delle scapole, uno all'altezza del bacino. Ci si sdraia sopra con un tappetino sottile in mezzo.
+
+Sotto i 12 mm il pannello flette e assorbe l'energia invece di trasmetterla.
+
+**3. Due pannelli separati**, uno per trasduttore, circa 40 × 40 cm ciascuno. Si spostano e si ripongono meglio, ma tendono a slittare.
+
+In tutti i casi, la distanza fra i due punti diventa **50 cm invece dei 20 fra sterno e addome**: la distinzione fra alto e basso è più netta che nella disposizione indossata.
+
+### Disaccoppiare dal pavimento
+
+Un pannello appoggiato direttamente su un pavimento rigido fa due cose sbagliate: il pavimento smorza la vibrazione, e il resto se ne va nella struttura dell'edificio. **In appartamento un trasduttore da 35 W a 40 Hz si sente dai vicini.**
+
+Metti il pannello su **blocchi di gommapiuma densa**, su un tappeto spesso, o su quattro piedini antivibranti. Costa poco e migliora sia la resa sia i rapporti di condominio.
+
+### Lunghezza dei cavi
+
+I cavi del BST-2 sono **già attaccati e lunghi 61 cm**. Dal pannello alla scatola potrebbero non bastare: tieni pronta una prolunga a due conduttori per lato, o piazza la scatola vicino al pannello.
 
 ### L'elettronica
 
