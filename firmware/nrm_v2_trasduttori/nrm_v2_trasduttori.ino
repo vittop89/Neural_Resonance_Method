@@ -43,6 +43,17 @@
      D13  OUT  LED integrato: flash a ogni battito rilevato
      liberi: D2, D4, D7, D11, D12, A2..A5
 
+   MAPPA PIN CON DISPOSIZIONE_IBRIDA = 1
+     I tre canali LED lasciano D3/D5/D6 e passano su un espansore PCA9685:
+     A4   I/O  SDA  ⎫ I2C verso il PCA9685, indirizzo 0x40
+     A5   OUT  SCL  ⎭ canali 0, 1, 2 = rosso, verde, blu
+     D3   OUT  gate MOSFET  motorino STERNO  .................... [Timer2]
+     D5   OUT  gate MOSFET  motorino ADDOME  .................... [Timer0]
+     D6        libero
+     I motorini SONO carichi induttivi: serve un 1N5819 in antiparallelo su
+     ciascuno, catodo al positivo. Senza, i picchi di commutazione rientrano
+     nell'ADC e rovinano la lettura del battito.
+
    NOTA TIMER
      Timer0 -> pin 5 e 6. Governa millis(), micros(), delay().
                Il prescaler NON viene mai modificato: base tempi esatta.
@@ -66,8 +77,25 @@
 #define TELEMETRIA    0   /* 1 = CSV a 115200. ESCLUDE MIDI_ATTIVO.           */
 #define PHASE_LOCK    1   /* 1 = azzera la fase di risonanza a ogni battito   */
 
+/* DISPOSIZIONE IBRIDA (vedi hardware/WIRING.md, disposizione C).
+   0 = base: trasduttori sotto il pannello, LED su PWM nativo dell'Uno.
+   1 = ibrida: in piu' due micromotori sulla fascia toracica che portano il
+       "dove" (lo scivolamento sterno/addome col respiro), mentre i
+       trasduttori restano al "cosa" (la portante a 40 Hz).
+
+   Perche' serve un espansore. La disposizione ibrida vuole SETTE canali PWM
+   (2 trasduttori + 3 LED + 2 motorini) e l'Uno ne ha sei; i due trasduttori
+   non sono spostabili, perche' devono stare su Timer1 per arrivare a 31 kHz
+   senza toccare millis(). Con IBRIDA a 1 i tre canali LED passano su un
+   modulo PCA9685 via I2C, liberando D3 e D5 per i motorini.                  */
+#define DISPOSIZIONE_IBRIDA  0
+
 #if MIDI_ATTIVO && TELEMETRIA
 #error "MIDI_ATTIVO e TELEMETRIA usano la stessa seriale: attivane solo uno."
+#endif
+
+#if DISPOSIZIONE_IBRIDA
+#include <Wire.h>         /* libreria di sistema, non esterna                 */
 #endif
 
 
@@ -89,13 +117,24 @@
 
 const uint8_t PIN_FSR      = A0;  /* respiro                                  */
 const uint8_t PIN_PPG      = A1;  /* battito                                  */
-const uint8_t PIN_LED_R    = 3;   /* canale rosso                  [Timer2]   */
-const uint8_t PIN_LED_G    = 5;   /* canale verde                  [Timer0]   */
-const uint8_t PIN_LED_B    = 6;   /* canale blu                    [Timer0]   */
 const uint8_t PIN_VS_RESET = 8;   /* reset VS1053, attivo basso               */
 const uint8_t PIN_TAT_ALTO = 9;   /* trasduttore sterno            [Timer1]   */
 const uint8_t PIN_TAT_BASSO= 10;  /* trasduttore addome            [Timer1]   */
 const uint8_t PIN_STATUS   = 13;  /* LED integrato, nessun cablaggio          */
+
+#if DISPOSIZIONE_IBRIDA
+/* I LED passano sui canali 0,1,2 del PCA9685; D3 e D5 vanno ai motorini.
+   D6 resta libero. A4/A5 diventano SDA/SCL.                                  */
+const uint8_t PIN_MOT_ALTO = 3;   /* motorino sterno               [Timer2]   */
+const uint8_t PIN_MOT_BASSO= 5;   /* motorino addome               [Timer0]   */
+const uint8_t CH_LED_R     = 0;   /* canale PCA9685                           */
+const uint8_t CH_LED_G     = 1;
+const uint8_t CH_LED_B     = 2;
+#else
+const uint8_t PIN_LED_R    = 3;   /* canale rosso                  [Timer2]   */
+const uint8_t PIN_LED_G    = 5;   /* canale verde                  [Timer0]   */
+const uint8_t PIN_LED_B    = 6;   /* canale blu                    [Timer0]   */
+#endif
 
 /* D1 (TX seriale) -> pin "Rx" del breakout VS1053, MIDI a 31250 baud.
    Liberi: D2, D4, D7, D11, D12, A2..A5.
@@ -176,6 +215,33 @@ const uint8_t COL_FAULT[3] = { 255,   0, 120 };  /* magenta: guasto FSR        *
 
 const float LUM_MIN = 0.20f;  /* luminosita' a polmoni vuoti                  */
 const float SAT_MIN = 0.25f;  /* saturazione a coerenza zero (colore lavato)  */
+
+/* Cadenza di aggiornamento dei LED. I colori seguono il respiro, quindi
+   frazioni di hertz: 50 Hz e' gia' abbondante. Serve soprattutto in
+   disposizione ibrida, dove ogni canale costa una transazione I2C da ~0,4 ms
+   e scriverli a ogni giro affosserebbe la temporizzazione dei 40 Hz.         */
+const uint8_t T_LED_MS = 20;
+
+
+/* ===========================================================================
+   5b.  MOTORINI SUL CORPO  (solo disposizione ibrida)
+   ---------------------------------------------------------------------------
+   Portano il "dove", non il "cosa": una rampa di intensita' con costante di
+   tempo di qualche centinaio di millisecondi. Nessun bisogno di 40 Hz.
+   =========================================================================== */
+
+#if DISPOSIZIONE_IBRIDA
+/* I motorini sono da 3 V alimentati dai 5 V: il duty va limitato, altrimenti
+   ricevono 5 V medi e durano poco. 150/255 = 59%, cioe' circa 2,9 V medi.    */
+const uint8_t MOT_DUTY_MAX = 150;
+const uint8_t MOT_DUTY_MIN = 70;    /* sotto questo l'ERM non parte           */
+const float   MOT_DEADZONE = 0.05f; /* sotto: motorino fermo                  */
+
+/* Il "dove" non deve sparire a polmoni vuoti, altrimenti a fine espirazione
+   non si capisce piu' dove sia la vibrazione. Questo e' il fondo che resta
+   comunque acceso, sopra il quale la profondita' del respiro aggiunge.       */
+const float   MOT_FONDO    = 0.35f;
+#endif
 
 
 /* ===========================================================================
@@ -313,12 +379,101 @@ static inline uint8_t gamma2(uint8_t v) {
   return (uint8_t)(((uint16_t)v * (uint16_t)v) / 255);
 }
 
-/* Scrive i tre canali LED applicando la correzione gamma.                     */
+#if DISPOSIZIONE_IBRIDA
+/* --------------------------------------------------------------------------
+   PCA9685: espansore PWM a 16 canali, 12 bit, su I2C.
+   Driver scritto qui invece di usare una libreria esterna: sono trenta righe
+   e il progetto resta compilabile con la sola IDE Arduino.
+   -------------------------------------------------------------------------- */
+const uint8_t PCA_ADDR      = 0x40;  /* indirizzo di fabbrica                 */
+const uint8_t PCA_MODE1     = 0x00;
+const uint8_t PCA_PRESCALE  = 0xFE;
+const uint8_t PCA_LED0_ON_L = 0x06;
+
+void pcaScrivi(uint8_t reg, uint8_t val) {
+  Wire.beginTransmission(PCA_ADDR);
+  Wire.write(reg);
+  Wire.write(val);
+  Wire.endTransmission();
+}
+
+/* Duty 0..255 sul canale indicato, con gestione esplicita dei due estremi.
+   Il PCA9685 ha due bit dedicati "sempre acceso" e "sempre spento": usarli
+   evita il micro-impulso che altrimenti resta a duty zero.                    */
+void pcaDuty(uint8_t canale, uint8_t duty) {
+  uint16_t on = 0, off = 0;
+  if      (duty == 0)   off = 0x1000;                        /* full OFF      */
+  else if (duty == 255) on  = 0x1000;                        /* full ON       */
+  else                  off = (uint16_t)(((uint32_t)duty * 4096UL) / 255UL);
+
+  Wire.beginTransmission(PCA_ADDR);
+  Wire.write(PCA_LED0_ON_L + 4 * canale);
+  Wire.write((uint8_t)(on  & 0xFF));  Wire.write((uint8_t)(on  >> 8));
+  Wire.write((uint8_t)(off & 0xFF));  Wire.write((uint8_t)(off >> 8));
+  Wire.endTransmission();
+}
+
+/* Porta il PCA9685 a ~1000 Hz. Il prescaler si puo' scrivere solo con il
+   chip in sleep, poi va risvegliato e gli si lascia stabilizzare l'oscillatore. */
+void pcaInit() {
+  Wire.begin();
+  Wire.setClock(400000);              /* I2C veloce: 0,4 ms -> 0,1 ms a canale */
+
+  /* prescale = 25 MHz / (4096 * f) - 1, arrotondato. Per 1000 Hz da 5.       */
+  const uint8_t prescale = 5;
+
+  pcaScrivi(PCA_MODE1, 0x10);         /* SLEEP                                 */
+  pcaScrivi(PCA_PRESCALE, prescale);
+  pcaScrivi(PCA_MODE1, 0x00);         /* sveglia                               */
+  delay(1);                           /* l'oscillatore vuole ~500 us           */
+  pcaScrivi(PCA_MODE1, 0xA0);         /* RESTART + auto-increment              */
+
+  for (uint8_t c = 0; c < 3; c++) pcaDuty(c, 0);   /* luci spente all'avvio    */
+}
+#endif  /* DISPOSIZIONE_IBRIDA */
+
+
+/* Scrive i tre canali LED applicando la correzione gamma.
+   Aggiornamento limitato a T_LED_MS e saltato se il colore non e' cambiato:
+   in disposizione ibrida ogni canale e' una transazione I2C, e scriverli a
+   ogni giro di loop ruberebbe tempo alla fase dei 40 Hz.                      */
 void scriviLed(uint8_t r, uint8_t g, uint8_t b) {
+  static uint32_t tPrec = 0;
+  static uint8_t  rPrec = 0, gPrec = 0, bPrec = 0;
+  static bool     primo = true;        /* la prima scrittura non aspetta       */
+
+  if (!primo && r == rPrec && g == gPrec && b == bPrec) return;  /* nulla e' cambiato */
+  uint32_t now = millis();
+  if (!primo && (uint32_t)(now - tPrec) < T_LED_MS) return;      /* non e' ancora ora */
+  primo = false;
+  tPrec = now;
+  rPrec = r; gPrec = g; bPrec = b;
+
+#if DISPOSIZIONE_IBRIDA
+  pcaDuty(CH_LED_R, gamma2(r));
+  pcaDuty(CH_LED_G, gamma2(g));
+  pcaDuty(CH_LED_B, gamma2(b));
+#else
   analogWrite(PIN_LED_R, gamma2(r));
   analogWrite(PIN_LED_G, gamma2(g));
   analogWrite(PIN_LED_B, gamma2(b));
+#endif
 }
+
+#if DISPOSIZIONE_IBRIDA
+/* Scrive il duty dei due motorini sul corpo.                                  */
+void scriviMotori(uint8_t alto, uint8_t basso) {
+  analogWrite(PIN_MOT_ALTO,  alto);
+  analogWrite(PIN_MOT_BASSO, basso);
+}
+
+/* Da intensita' richiesta 0..1 al duty, rispettando soglia di spunto e tetto. */
+uint8_t livelloMotore(float k) {
+  if (k < MOT_DEADZONE) return 0;
+  if (k > 1.0f) k = 1.0f;
+  return (uint8_t)(MOT_DUTY_MIN + (float)(MOT_DUTY_MAX - MOT_DUTY_MIN) * k);
+}
+#endif
 
 /* Scrive il PWM dei due canali tattili. Nessuna gamma: e' un segnale audio.  */
 void scriviTattile(uint8_t alto, uint8_t basso) {
@@ -745,6 +900,11 @@ void taskAttuatori(uint32_t nowUs, uint32_t nowMs) {
   /* riposo = meta' scala su entrambi i canali tattili: continua ferma,
      nessun segnale alternato, quindi silenzio dopo il condensatore d'ingresso */
   uint8_t tAlto = TAT_RIPOSO, tBasso = TAT_RIPOSO;
+#if DISPOSIZIONE_IBRIDA
+  /* i motorini partono fermi: solo ST_RUN li accende, quindi tutti gli stati
+     di sicurezza li lasciano a zero senza bisogno di scriverlo ogni volta    */
+  uint8_t mAlto = 0, mBasso = 0;
+#endif
 
   switch (stato) {
 
@@ -786,6 +946,16 @@ void taskAttuatori(uint32_t nowUs, uint32_t nowMs) {
          ripartizione fra sterno e addome da 'flusso'                          */
       tAlto  = livelloTattile(profondita * flusso,          fase);
       tBasso = livelloTattile(profondita * (1.0f - flusso), fase);
+
+#if DISPOSIZIONE_IBRIDA
+      /* Il "dove" sul torso. Stessa ripartizione 'flusso' che pilota il
+         colore e i trasduttori, ma su un fondo che non scende mai a zero:
+         a fine espirazione la vibrazione deve essere debole, non assente,
+         altrimenti si perde l'informazione di posizione.                     */
+      float ampMot = MOT_FONDO + (1.0f - MOT_FONDO) * profondita;
+      mAlto  = livelloMotore(ampMot * flusso);
+      mBasso = livelloMotore(ampMot * (1.0f - flusso));
+#endif
       break;
     }
 
@@ -809,6 +979,9 @@ void taskAttuatori(uint32_t nowUs, uint32_t nowMs) {
   }
 
   scriviTattile(tAlto, tBasso);
+#if DISPOSIZIONE_IBRIDA
+  scriviMotori(mAlto, mBasso);
+#endif
   scriviLed(r, g, b);
 
   /* LED 13: flash a ogni battito. Serve a vedere a occhio se il filtro
@@ -853,11 +1026,19 @@ void setup() {
 
   pinMode(PIN_TAT_ALTO,  OUTPUT);
   pinMode(PIN_TAT_BASSO, OUTPUT);
+  pinMode(PIN_STATUS,    OUTPUT);
+  pinMode(PIN_VS_RESET,  OUTPUT);
+
+#if DISPOSIZIONE_IBRIDA
+  pinMode(PIN_MOT_ALTO,  OUTPUT);
+  pinMode(PIN_MOT_BASSO, OUTPUT);
+  scriviMotori(0, 0);                    /* motorini fermi all'accensione      */
+  pcaInit();                             /* espansore PWM per i LED            */
+#else
   pinMode(PIN_LED_R,     OUTPUT);
   pinMode(PIN_LED_G,     OUTPUT);
   pinMode(PIN_LED_B,     OUTPUT);
-  pinMode(PIN_STATUS,    OUTPUT);
-  pinMode(PIN_VS_RESET,  OUTPUT);
+#endif
 
   scriviTattile(TAT_RIPOSO, TAT_RIPOSO); /* silenzio: meta scala, non zero     */
   scriviLed(0, 0, 0);
@@ -924,6 +1105,12 @@ void loop() {
    4) Se il drone e' troppo presente, abbassa VOL_DRONE_MAX prima di toccare
       il volume dell'amplificatore: cosi' il rapporto fra le voci resta quello
       progettato.
+
+   7) DISPOSIZIONE IBRIDA. Tara MOT_DUTY_MAX guardando il consumo: i motorini
+      sono da 3 V e su 5 V il duty massimo sicuro sta intorno a 150/255.
+      MOT_FONDO decide quanta vibrazione resta a polmoni vuoti: a 0 il "dove"
+      sparisce a fine espirazione, a 0,5 non si distingue piu' il respiro.
+      Lo 0,35 di default e' un compromesso da provare addosso.
 
    5) Catena di uscita tattile, per canale:
 
