@@ -1,0 +1,16 @@
+# Database e artefatti di strumenti locali: mai nel repo pubblico
+*.db
+*.sqlite
+*.sqlite3
+.ruvector/
+.claude/
+
+# Build Arduino
+build/
+*.hex
+*.elf
+
+# Sistema
+Thumbs.db
+.DS_Store
+desktop.ini

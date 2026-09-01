@@ -1,0 +1,951 @@
+/* =============================================================================
+   NEURAL RESONANCE METHOD  -  firmware v2.0
+   Biofeedback respiratorio a circuito chiuso su tre canali sensoriali:
+   TATTO (40 Hz reali) - LUCE (colore e saturazione) - SUONO (sintesi GM).
+
+   Target  : Arduino Uno R3 (ATmega328P @ 16 MHz)
+   Licenza : uso personale / sperimentale.  NON e' un dispositivo medico.
+
+   -----------------------------------------------------------------------------
+   COSA CAMBIA RISPETTO ALLA v1.0
+   -----------------------------------------------------------------------------
+   - Attuatori tattili: trasduttori a bobina mobile al posto dei motori ERM.
+     I 40 Hz ora arrivano davvero al corpo. Uscita sinusoidale, non burst.
+   - Timer1 a 31,4 kHz: la portante PWM finisce cosi' lontano dai 40 Hz che
+     il filtro RC la cancella del tutto, lasciando una sinusoide pulita.
+   - Nuovo canale SUONO: sintetizzatore VS1053 in modo MIDI hardware.
+     Tre voci, tutte modulate dal respiro in tempo reale.
+   - Nuovo indice di COERENZA CARDIORESPIRATORIA (RSA): misura se il battito
+     accelera in inspirazione e rallenta in espirazione. Pilota la saturazione
+     del colore e il volume delle campane. E' il vero anello di biofeedback:
+     si chiude sulla fisiologia, non solo sul sensore di respiro.
+   - Mappa pin riorganizzata: i LED liberano il pin 11, la seriale hardware
+     passa al MIDI.
+
+   -----------------------------------------------------------------------------
+   MAPPA PIN
+   -----------------------------------------------------------------------------
+     A0   IN   FSR402 su partitore 10k ....... respiro
+     A1   IN   Pulse Sensor PPG .............. battito (lobo orecchio)
+     D1   OUT  TX seriale -> pin "Rx" VS1053 . MIDI a 31250 baud
+                 Il breakout Adafruit 1381 ha i level shifter a bordo: si
+                 collega diretto ai 5 V dell'Arduino, senza partitori.
+                 I soli pin GPIO NON sono 5 V safe: GPIO-1 va sui 3,3 V.
+     D8   OUT  reset VS1053 (attivo basso)
+     D9   OUT  rete RC+attenuatore -> ampli L  trasduttore STERNO   [Timer1]
+     D10  OUT  rete RC+attenuatore -> ampli R  trasduttore ADDOME   [Timer1]
+                 NESSUN MOSFET su questi due: sono segnali, non potenza.
+                 Rete per canale: 10k in serie, 1k verso massa, 1uF verso
+                 massa, poi 4,7uF in serie all'ingresso dell'amplificatore.
+     D3   OUT  gate MOSFET  LED ROSSO ........................... [Timer2]
+     D5   OUT  gate MOSFET  LED VERDE ........................... [Timer0]
+     D6   OUT  gate MOSFET  LED BLU ............................. [Timer0]
+     D13  OUT  LED integrato: flash a ogni battito rilevato
+     liberi: D2, D4, D7, D11, D12, A2..A5
+
+   NOTA TIMER
+     Timer0 -> pin 5 e 6. Governa millis(), micros(), delay().
+               Il prescaler NON viene mai modificato: base tempi esatta.
+     Timer1 -> pin 9 e 10. Prescaler a /1 = 31372 Hz. Serve al canale tattile.
+     Timer2 -> pin 3. Lasciato al default (490 Hz): e' solo un LED.
+
+   NOTA SERIALE
+     Con MIDI attivo la seriale hardware parla a 31250 baud e la telemetria
+     non e' disponibile: le due cose si escludono a vicenda. In fase di
+     taratura si compila con TELEMETRIA 1 / MIDI 0, in uso con MIDI 1.
+     Durante l'upload dello sketch conviene staccare il filo verso l'RX del
+     VS1053: riceverebbe il flusso del bootloader (innocuo ma rumoroso).
+   ============================================================================= */
+
+
+/* ===========================================================================
+   1.  CONFIGURAZIONE COMPILAZIONE
+   =========================================================================== */
+
+#define MIDI_ATTIVO   1   /* 1 = canale suono attivo sulla seriale hardware   */
+#define TELEMETRIA    0   /* 1 = CSV a 115200. ESCLUDE MIDI_ATTIVO.           */
+#define PHASE_LOCK    1   /* 1 = azzera la fase di risonanza a ogni battito   */
+
+#if MIDI_ATTIVO && TELEMETRIA
+#error "MIDI_ATTIVO e TELEMETRIA usano la stessa seriale: attivane solo uno."
+#endif
+
+
+/* ===========================================================================
+   2.  PIN
+   =========================================================================== */
+
+/* MAPPA PIN v2.1 - verificata contro le schede tecniche dei costruttori.
+
+   La via MIDI su seriale e' CONFERMATA dalla guida ufficiale Adafruit per il
+   breakout VS1053 (prodotto 1381): il modo MIDI si abilita con due ponticelli
+   e i byte entrano dal pin "Rx" della scheda a 31250 baud. Non serve SPI,
+   quindi D11/D12/D13 restano liberi e il LED di stato puo' stare sul D13
+   integrato, senza cablare niente.
+
+   ATTENZIONE, dalla stessa guida: i pin di interfaccia del breakout hanno i
+   level shifter a bordo e sono 5 V compatibili, MA i pin GPIO no.
+   GPIO-1 va al pin 3,3 V dell'Arduino, mai ai 5 V.                            */
+
+const uint8_t PIN_FSR      = A0;  /* respiro                                  */
+const uint8_t PIN_PPG      = A1;  /* battito                                  */
+const uint8_t PIN_LED_R    = 3;   /* canale rosso                  [Timer2]   */
+const uint8_t PIN_LED_G    = 5;   /* canale verde                  [Timer0]   */
+const uint8_t PIN_LED_B    = 6;   /* canale blu                    [Timer0]   */
+const uint8_t PIN_VS_RESET = 8;   /* reset VS1053, attivo basso               */
+const uint8_t PIN_TAT_ALTO = 9;   /* trasduttore sterno            [Timer1]   */
+const uint8_t PIN_TAT_BASSO= 10;  /* trasduttore addome            [Timer1]   */
+const uint8_t PIN_STATUS   = 13;  /* LED integrato, nessun cablaggio          */
+
+/* D1 (TX seriale) -> pin "Rx" del breakout VS1053, MIDI a 31250 baud.
+   Liberi: D2, D4, D7, D11, D12, A2..A5.
+
+   RIPIEGO, se al posto dell'Adafruit monti un modulo generico privo di GPIO
+   esposti: si passa al MIDI su SPI con la libreria Adafruit_VS1053. Servono
+   D11/D12/D13 piu' tre pin di controllo (D2 = XCS, D4 = XDCS, D7 = DREQ), e
+   il LED di stato va spostato su A2. Cambiano solo il corpo di midi2() e
+   midi3(): tutto il resto del firmware resta identico.                        */
+
+
+/* ===========================================================================
+   3.  COSTANTI DI TEMPO  (millisecondi salvo diversa indicazione)
+   =========================================================================== */
+
+const uint16_t T_CALIB_MS       = 10000; /* calibrazione automatica FSR        */
+const uint16_t T_SETTLE_MS      = 500;   /* scarto iniziale                    */
+const uint16_t T_PPG_US         = 2000;  /* campionamento PPG = 500 Hz         */
+const uint8_t  T_RESP_MS        = 20;    /* campionamento respiro = 50 Hz      */
+const uint8_t  T_AUDIO_MS       = 50;    /* aggiornamento MIDI = 20 Hz         */
+const uint16_t T_TELEM_MS       = 100;   /* telemetria                         */
+const uint16_t T_REFRATTARIO_MS = 500;   /* finestra refrattaria: max 120 BPM  */
+const uint16_t T_IBI_MAX_MS     = 2000;  /* IBI oltre il quale scarto          */
+const uint16_t T_PULSE_TOUT_MS  = 3000;  /* SICUREZZA: nessun battito -> stop  */
+const uint16_t T_FSR_FAULT_MS   = 2000;  /* FSR a fondoscala -> guasto         */
+const uint16_t T_BLINK_MS       = 250;   /* semiperiodo allarme (2 Hz)         */
+const uint16_t T_FLASH_MS       = 60;    /* flash LED 13 sul battito           */
+const uint16_t T_CAMPANA_MS     = 1600;  /* durata nota delle campane          */
+
+
+/* ===========================================================================
+   4.  RISONANZA GAMMA
+   =========================================================================== */
+
+const float F_GAMMA = 40.0f;  /* target onde gamma                            */
+const float F_MIN   = 30.0f;  /* limite inferiore                             */
+const float F_MAX   = 50.0f;  /* limite superiore                             */
+
+
+/* ===========================================================================
+   5.  ATTUATORI TATTILI
+   ---------------------------------------------------------------------------
+   Con un trasduttore a bobina mobile non esiste soglia di spunto: si parte
+   da zero. Il tetto va tenuto basso, perche' il biofeedback funziona meglio
+   con uno stimolo appena percepibile che con uno stimolo forte.
+   =========================================================================== */
+
+const uint8_t TAT_RIPOSO   = 128;   /* meta' scala = silenzio (vedi sotto)    */
+const uint8_t TAT_MAX      = 200;   /* ampiezza picco-picco massima, su 255   */
+const float   TAT_DEADZONE = 0.03f; /* sotto: uscita ferma a TAT_RIPOSO       */
+
+/* PERCHE' L'USCITA RIPOSA A META' SCALA E NON A ZERO.
+   Il PWM filtrato diventa una tensione continua: duty 0 = 0 V, duty 255 = 5 V.
+   Se la sinusoide venisse generata fra 0 e "ampiezza", il valore MEDIO
+   cambierebbe con il respiro, e quella deriva lentissima (0,2 Hz) arriverebbe
+   all'amplificatore come una componente continua variabile: bobina spostata
+   dal centro, riscaldamento, e meno escursione utile.
+   Generando invece la sinusoide SIMMETRICA attorno a 128, il valore medio
+   resta fisso a 2,5 V qualunque cosa faccia il respiro: cambia solo
+   l'ampiezza alternata. Il condensatore d'ingresso dell'amplificatore
+   toglie quel 2,5 V costante e passa solo il segnale.                         */
+
+
+/* ===========================================================================
+   6.  COLORI
+   ---------------------------------------------------------------------------
+   Freddo in inspirazione, caldo in espirazione. Non e' una scelta estetica:
+   segue la fisiologia. L'inspirazione e' la fase simpatica (attivazione),
+   l'espirazione quella parasimpatica (rilascio). La luce dice al corpo
+   quello che il corpo sta gia' facendo.
+   =========================================================================== */
+
+const uint8_t COL_INSP [3] = {   0,  60, 255 };  /* blu freddo                 */
+const uint8_t COL_ESP  [3] = { 255,  70,   0 };  /* ambra caldo                */
+const uint8_t COL_CAL  [3] = {  80,   0, 160 };  /* viola: calibrazione        */
+const uint8_t COL_ALERT[3] = { 255, 210,   0 };  /* giallo: battito perso      */
+const uint8_t COL_FAULT[3] = { 255,   0, 120 };  /* magenta: guasto FSR        */
+
+const float LUM_MIN = 0.20f;  /* luminosita' a polmoni vuoti                  */
+const float SAT_MIN = 0.25f;  /* saturazione a coerenza zero (colore lavato)  */
+
+
+/* ===========================================================================
+   7.  FILTRI RESPIRO
+   =========================================================================== */
+
+const float   A_VELOCE  = 0.25f; /* alpha EMA veloce                          */
+const float   A_LENTA   = 0.06f; /* alpha EMA lenta (linea di base)           */
+const float   SLEW_FLOW = 0.06f; /* scivolamento fra i due trasduttori        */
+const int16_t RANGE_MIN = 30;    /* escursione minima in conteggi ADC         */
+
+
+/* ===========================================================================
+   8.  FILTRI PPG
+   =========================================================================== */
+
+const int16_t PPG_AMP_MIN     = 12; /* ampiezza minima per considerare battito*/
+const uint8_t PPG_SOGLIA_ALTA = 60; /* % ampiezza: scatto                     */
+const uint8_t PPG_SOGLIA_BASSA= 40; /* % ampiezza: riarmo (isteresi)          */
+const uint8_t PPG_DECADI_OGNI = 10; /* ogni N campioni l'inviluppo si stringe */
+const uint8_t IBI_BUF_N       = 5;  /* media mobile su 5 intervalli R-R       */
+const float   A_COERENZA      = 0.08f; /* alpha coerenza (~12 battiti)        */
+
+
+/* ===========================================================================
+   9.  MAPPA MIDI
+   ---------------------------------------------------------------------------
+   Tre voci sui primi tre canali. I numeri di programma sono GM meno uno,
+   perche' il MIDI conta da zero mentre le tabelle GM contano da uno.
+
+   ch0  DRONE     Pad 2 (warm), GM 90.  Due note tenute: E1 (41,2 Hz) ed E2.
+                  E1 e' praticamente il target dei 40 Hz: il corpo sente il
+                  fondamentale sulla pelle e le orecchie sentono lo stesso
+                  fondamentale piu' l'ottava. Stesso tono, due sensi diversi.
+   ch1  LETTO     Seashore, GM 123. Rumore di risacca, tenuto.
+   ch2  CAMPANE   Tubular Bells, GM 15. Una nota al cambio di direzione.
+   =========================================================================== */
+
+const uint8_t MIDI_CH_DRONE   = 0;
+const uint8_t MIDI_CH_LETTO   = 1;
+const uint8_t MIDI_CH_CAMPANE = 2;
+
+const uint8_t GM_PAD_WARM = 89;  /* GM 90  - Pad 2 (warm)                     */
+const uint8_t GM_SEASHORE = 122; /* GM 123 - Seashore                         */
+const uint8_t GM_BELLS    = 14;  /* GM 15  - Tubular Bells                    */
+
+const uint8_t NOTA_DRONE_1 = 28; /* E1, 41,2 Hz - il fondamentale             */
+const uint8_t NOTA_DRONE_2 = 40; /* E2, 82,4 Hz - l'ottava                    */
+const uint8_t NOTA_LETTO   = 48; /* irrilevante: la risacca non ha altezza    */
+const uint8_t NOTA_CAMPANA_ALTA = 76; /* E5 - vertice dell'inspirazione       */
+const uint8_t NOTA_CAMPANA_BASSA= 64; /* E4 - fondo dell'espirazione          */
+
+const uint8_t VOL_LETTO_MAX = 70;  /* il letto non deve mai coprire il drone  */
+const uint8_t VOL_DRONE_MAX = 100;
+
+
+/* ===========================================================================
+   10.  MACCHINA A STATI
+   =========================================================================== */
+
+enum {
+  ST_CALIB,      /* 0 - calibrazione automatica del range FSR                 */
+  ST_RUN,        /* 1 - funzionamento normale                                 */
+  ST_NO_PULSE,   /* 2 - SICUREZZA: nessun battito da > 3 s                    */
+  ST_FSR_FAULT   /* 3 - fascia respiro scollegata                             */
+};
+
+uint8_t stato = ST_CALIB;
+
+
+/* ===========================================================================
+   11.  VARIABILI GLOBALI
+   =========================================================================== */
+
+/* --- scheduler ------------------------------------------------------------ */
+uint32_t tPpgPrec   = 0;
+uint32_t tRespPrec  = 0;
+uint32_t tAudioPrec = 0;
+uint32_t tTelemPrec = 0;
+uint32_t tFasePrec  = 0;
+uint32_t tShrink    = 0;
+
+/* --- respiro -------------------------------------------------------------- */
+float    emaVeloce    = 0.0f;
+float    emaLenta     = 0.0f;
+bool     emaInit      = false;
+float    calMin       = 1023.0f;
+float    calMax       = 0.0f;
+float    profondita   = 0.0f;   /* 0 = polmoni vuoti, 1 = polmoni pieni       */
+float    flusso       = 0.0f;   /* 0 = espirazione,   1 = inspirazione        */
+bool     inspirazione = false;
+bool     inspPrec     = false;  /* per rilevare il cambio di direzione        */
+float    profAlTurno  = 0.5f;   /* profondita' all'ultimo cambio direzione    */
+uint32_t tFsrOk       = 0;
+
+/* --- battito -------------------------------------------------------------- */
+int16_t  ppgPicco       = 512;
+int16_t  ppgValle       = 512;
+bool     battArmato     = false;
+uint8_t  decadiCnt      = 0;
+uint32_t tUltimoBattito = 0;
+uint32_t tFlashLed      = 0;
+uint16_t ibiBuf[IBI_BUF_N];
+uint8_t  ibiIdx         = 0;
+uint8_t  ibiCount       = 0;
+float    bpm            = 0.0f;
+float    ibiMedio       = 0.0f;
+float    coerenza       = 0.0f; /* 0 = nessuna RSA, 1 = respiro e cuore in fase*/
+
+/* --- risonanza ------------------------------------------------------------ */
+uint32_t faseAcc    = 0;
+uint32_t faseIncUs  = 0;
+float    fRisonanza = F_GAMMA;
+uint16_t moltiplic  = 0;
+
+/* --- audio ---------------------------------------------------------------- */
+uint32_t tCampanaOff = 0;       /* quando spegnere la campana in suono        */
+uint8_t  campanaNota = 0;       /* nota attualmente accesa (0 = nessuna)      */
+uint8_t  ccVolDrone  = 255;     /* ultimi valori inviati: evita CC ridondanti */
+uint8_t  ccBriDrone  = 255;
+uint8_t  ccVolLetto  = 255;
+bool     audioMuto   = true;
+
+/* --- tabella seno --------------------------------------------------------- */
+uint8_t tabSeno[256];
+
+
+/* ===========================================================================
+   12.  UTILITA'
+   =========================================================================== */
+
+/* Correzione gamma 2.0 con sola aritmetica intera. L'occhio e' logaritmico:
+   senza questa una rampa lineare di PWM sembra saltare tutta in fondo.        */
+static inline uint8_t gamma2(uint8_t v) {
+  return (uint8_t)(((uint16_t)v * (uint16_t)v) / 255);
+}
+
+/* Scrive i tre canali LED applicando la correzione gamma.                     */
+void scriviLed(uint8_t r, uint8_t g, uint8_t b) {
+  analogWrite(PIN_LED_R, gamma2(r));
+  analogWrite(PIN_LED_G, gamma2(g));
+  analogWrite(PIN_LED_B, gamma2(b));
+}
+
+/* Scrive il PWM dei due canali tattili. Nessuna gamma: e' un segnale audio.  */
+void scriviTattile(uint8_t alto, uint8_t basso) {
+  analogWrite(PIN_TAT_ALTO,  alto);
+  analogWrite(PIN_TAT_BASSO, basso);
+}
+
+/* Ampiezza tattile: da intensita' richiesta 0..1 e fase, al duty PWM.
+   Sinusoide simmetrica attorno a TAT_RIPOSO: la continua non si muove mai.    */
+uint8_t livelloTattile(float k, uint8_t fase) {
+  if (k < TAT_DEADZONE) return TAT_RIPOSO;    /* silenzio, non zero            */
+  if (k > 1.0f) k = 1.0f;
+
+  int16_t amp = (int16_t)((float)TAT_MAX * k);          /* 0..TAT_MAX          */
+  int16_t ac  = (int16_t)tabSeno[fase] - 128;           /* -128..+127          */
+  int16_t out = (int16_t)TAT_RIPOSO + (int16_t)(((int32_t)ac * (int32_t)amp) / 255L);
+
+  if (out < 0)   out = 0;                     /* saturazione di sicurezza      */
+  if (out > 255) out = 255;
+  return (uint8_t)out;
+}
+
+/* Costruisce la tabella del seno rialzato 0..255 su un ciclo completo.        */
+void costruisciTabellaSeno() {
+  for (uint16_t i = 0; i < 256; i++) {
+    float a = (float)i * (2.0f * 3.14159265f / 256.0f);
+    tabSeno[i] = (uint8_t)((sin(a) * 0.5f + 0.5f) * 255.0f + 0.5f);
+  }
+}
+
+
+/* ===========================================================================
+   13.  CONFIGURAZIONE PWM
+   =========================================================================== */
+
+void configuraPWM() {
+  /* Timer1 (pin 9,10) -> prescaler /1. Phase-correct 8 bit:
+     f = 16 MHz / (510 * 1) = 31372 Hz.
+     Il filtro RC in uscita (1 kOhm + 1 uF, taglio a ~160 Hz) attenua questa
+     portante di circa 46 dB, lasciando passare i 40 Hz praticamente intatti.
+     Timer1 non ha alcun ruolo in millis().                                    */
+  TCCR1B = (TCCR1B & 0b11111000) | 0b001;
+
+  /* Timer2 (pin 3) resta al default 490 Hz: pilota solo un LED.
+     Timer0 (pin 5,6) NON viene toccato: regge millis(), micros(), delay().    */
+}
+
+
+/* ===========================================================================
+   14.  STRATO MIDI
+   ---------------------------------------------------------------------------
+   Il VS1053 in modo MIDI hardware accetta byte MIDI grezzi a 31250 baud
+   sul suo pin RX. Nessuna libreria, nessun SPI: si scrive sulla seriale.
+   Il modo si abilita via strapping: GPIO0 a massa e GPIO1 a 3,3 V al reset.
+   =========================================================================== */
+
+#if MIDI_ATTIVO
+
+/* Messaggio a 3 byte: note on/off, control change.                            */
+void midi3(uint8_t stato_, uint8_t d1, uint8_t d2) {
+  Serial.write(stato_); Serial.write(d1); Serial.write(d2);
+}
+
+/* Messaggio a 2 byte: program change.                                         */
+void midi2(uint8_t stato_, uint8_t d1) {
+  Serial.write(stato_); Serial.write(d1);
+}
+
+/* Seleziona il banco melodico e assegna un timbro a un canale.                */
+void midiTimbro(uint8_t ch, uint8_t programma) {
+  midi3(0xB0 | ch, 0x00, 0x00);      /* bank select MSB = banco melodico       */
+  midi2(0xC0 | ch, programma);       /* program change                         */
+}
+
+void midiNoteOn (uint8_t ch, uint8_t nota, uint8_t vel) { midi3(0x90 | ch, nota, vel); }
+void midiNoteOff(uint8_t ch, uint8_t nota)              { midi3(0x80 | ch, nota, 0);   }
+
+/* Invia un control change solo se il valore e' cambiato: cosi' la seriale
+   non viene saturata e la temporizzazione del loop resta stabile.             */
+void midiCC(uint8_t ch, uint8_t cc, uint8_t val, uint8_t *ultimo) {
+  if (val == *ultimo) return;
+  *ultimo = val;
+  midi3(0xB0 | ch, cc, val);
+}
+
+/* Accende le voci tenute (drone + letto) a volume zero.                       */
+void midiAvvia() {
+  midiTimbro(MIDI_CH_DRONE,   GM_PAD_WARM);
+  midiTimbro(MIDI_CH_LETTO,   GM_SEASHORE);
+  midiTimbro(MIDI_CH_CAMPANE, GM_BELLS);
+
+  midi3(0xB0 | MIDI_CH_DRONE, 7, 0);   /* volume a zero prima di suonare       */
+  midi3(0xB0 | MIDI_CH_LETTO, 7, 0);
+  midi3(0xB0 | MIDI_CH_CAMPANE, 7, 90);
+
+  midiNoteOn(MIDI_CH_DRONE, NOTA_DRONE_1, 100);
+  midiNoteOn(MIDI_CH_DRONE, NOTA_DRONE_2, 80);
+  midiNoteOn(MIDI_CH_LETTO, NOTA_LETTO,   100);
+
+  ccVolDrone = 255; ccBriDrone = 255; ccVolLetto = 255;  /* forza il primo CC  */
+  audioMuto = false;
+}
+
+/* Porta a zero tutti i volumi. Usata negli stati di sicurezza.                */
+void midiSilenzio() {
+  if (audioMuto) return;
+  midiCC(MIDI_CH_DRONE, 7, 0, &ccVolDrone);
+  midiCC(MIDI_CH_LETTO, 7, 0, &ccVolLetto);
+  if (campanaNota) { midiNoteOff(MIDI_CH_CAMPANE, campanaNota); campanaNota = 0; }
+  audioMuto = true;
+}
+
+#endif  /* MIDI_ATTIVO */
+
+
+/* ===========================================================================
+   15.  MOLTIPLICATORE ARMONICO
+   ---------------------------------------------------------------------------
+   Hz_cuore = BPM / 60. Si cerca il moltiplicatore intero M che porta
+   Hz_cuore * M il piu' vicino possibile a 40 Hz, vincolato in [30, 50].
+   =========================================================================== */
+
+void aggiornaRisonanza() {
+  float hz = bpm / 60.0f;
+  if (hz < 0.4f) hz = 0.4f;                   /* guardia                       */
+
+  uint16_t m = (uint16_t)((F_GAMMA / hz) + 0.5f);   /* intero piu' vicino      */
+  if (m < 1) m = 1;
+
+  float f = hz * (float)m;
+
+  if (f < F_MIN)      { m += 1;                 f = hz * (float)m; }
+  else if (f > F_MAX) { if (m > 1) { m -= 1; }  f = hz * (float)m; }
+
+  if (f < F_MIN) f = F_MIN;
+  if (f > F_MAX) f = F_MAX;
+
+  moltiplic  = m;
+  fRisonanza = f;
+
+  /* incremento di fase per microsecondo: f * 2^32 / 1e6 = f * 4294.967296     */
+  faseIncUs = (uint32_t)(fRisonanza * 4294.967296f);
+}
+
+
+/* ===========================================================================
+   16.  INTERVALLO R-R E COERENZA CARDIORESPIRATORIA
+   ---------------------------------------------------------------------------
+   L'aritmia sinusale respiratoria e' un fatto fisiologico: in inspirazione
+   il cuore accelera, in espirazione rallenta. Quanto marcato sia l'effetto
+   dipende dal tono vagale, e migliora quando il respiro e' lento e regolare.
+
+   Qui si confronta, a ogni battito, la direzione dell'intervallo R-R con la
+   direzione del respiro. Concordanza = coerenza alta. E' l'unica misura del
+   sistema che usa entrambi i sensori insieme, ed e' il vero anello chiuso:
+   il dispositivo non mostra cosa stai respirando, mostra come il tuo cuore
+   sta rispondendo a quello che respiri.
+   =========================================================================== */
+
+void registraIBI(uint16_t ibi) {
+  /* --- coerenza: confronto prima di aggiornare la media --------------------- */
+  if (ibiCount >= 3) {
+    /* IBI piu' corto del medio = cuore accelerato                             */
+    bool cuoreAccelera = ((float)ibi < ibiMedio);
+    bool atteso = inspirazione ? cuoreAccelera : !cuoreAccelera;
+    coerenza += ((atteso ? 1.0f : 0.0f) - coerenza) * A_COERENZA;
+  }
+
+  /* --- buffer circolare e media -------------------------------------------- */
+  ibiBuf[ibiIdx] = ibi;
+  ibiIdx = (uint8_t)((ibiIdx + 1) % IBI_BUF_N);
+  if (ibiCount < IBI_BUF_N) ibiCount++;
+
+  uint32_t somma = 0;
+  for (uint8_t i = 0; i < ibiCount; i++) somma += ibiBuf[i];
+  ibiMedio = (float)somma / (float)ibiCount;
+
+  bpm = 60000.0f / ibiMedio;
+  aggiornaRisonanza();
+}
+
+
+/* ===========================================================================
+   17.  TASK PPG  -  500 Hz
+   ---------------------------------------------------------------------------
+   Soglia adattiva su inviluppo picco/valle, isteresi, finestra refrattaria.
+   La finestra da 500 ms scarta qualunque falso picco generato dalla
+   vibrazione meccanica e fissa il tetto fisiologico a 120 BPM.
+   =========================================================================== */
+
+void taskPPG(uint32_t nowUs, uint32_t nowMs) {
+  if ((uint32_t)(nowUs - tPpgPrec) < T_PPG_US) return;
+  tPpgPrec = nowUs;
+
+  int16_t raw = (int16_t)analogRead(PIN_PPG);
+
+  /* inviluppo: sale subito, si restringe piano                                */
+  if (raw > ppgPicco) ppgPicco = raw;
+  if (raw < ppgValle) ppgValle = raw;
+  if (++decadiCnt >= PPG_DECADI_OGNI) {
+    decadiCnt = 0;
+    if (ppgPicco > ppgValle + 2) { ppgPicco--; ppgValle++; }
+  }
+
+  int16_t amp    = ppgPicco - ppgValle;
+  int16_t sAlta  = ppgValle + (int16_t)(((int32_t)amp * PPG_SOGLIA_ALTA)  / 100);
+  int16_t sBassa = ppgValle + (int16_t)(((int32_t)amp * PPG_SOGLIA_BASSA) / 100);
+
+  /* fronte di salita = battito                                                */
+  if (!battArmato && amp >= PPG_AMP_MIN && raw > sAlta) {
+    uint32_t dt = nowMs - tUltimoBattito;
+
+    if (dt >= T_REFRATTARIO_MS) {
+      if (tUltimoBattito != 0 && dt <= T_IBI_MAX_MS) registraIBI((uint16_t)dt);
+      tUltimoBattito = nowMs;
+      tFlashLed      = nowMs;
+      battArmato     = true;
+#if PHASE_LOCK
+      /* Il treno a 40 Hz riparte sul picco sistolico. Essendo fRisonanza un
+         multiplo intero del battito, a regime non produce discontinuita':
+         corregge solo la deriva accumulata fra un battito e il successivo.    */
+      faseAcc = 0;
+#endif
+    }
+  }
+
+  if (battArmato && raw < sBassa) battArmato = false;
+}
+
+
+/* ===========================================================================
+   18.  TASK RESPIRO  -  50 Hz
+   =========================================================================== */
+
+void taskRespiro(uint32_t nowMs) {
+  if ((uint32_t)(nowMs - tRespPrec) < T_RESP_MS) return;
+  tRespPrec = nowMs;
+
+  int16_t raw = (int16_t)analogRead(PIN_FSR);
+
+  /* lettura incollata a fondoscala = fascia scollegata o partitore in corto   */
+  if (raw > 5 && raw < 1018) tFsrOk = nowMs;
+
+  if (!emaInit) { emaVeloce = (float)raw; emaLenta = (float)raw; emaInit = true; }
+  emaVeloce += ((float)raw - emaVeloce) * A_VELOCE;
+  emaLenta  += (emaVeloce  - emaLenta ) * A_LENTA;
+
+  /* --- calibrazione automatica dei primi 10 secondi ------------------------ */
+  if (stato == ST_CALIB) {
+    if (nowMs >= T_SETTLE_MS) {
+      if ((float)raw < calMin) calMin = (float)raw;
+      if ((float)raw > calMax) calMax = (float)raw;
+    }
+    return;
+  }
+
+  /* --- auto-range continuo ------------------------------------------------- */
+  /* L'FSR su fascia elastica ha isteresi intorno al 10% e deriva mentre il
+     tessuto si assesta. Senza questo blocco la mappatura si sfalsa in pochi
+     minuti: si espande subito, si restringe di 1 LSB al secondo per lato.     */
+  if (emaVeloce > calMax) calMax = emaVeloce;
+  if (emaVeloce < calMin) calMin = emaVeloce;
+  if ((uint32_t)(nowMs - tShrink) >= 1000) {
+    tShrink = nowMs;
+    if ((calMax - calMin) > (float)(RANGE_MIN + 2)) { calMax -= 1.0f; calMin += 1.0f; }
+  }
+
+  /* --- profondita' normalizzata 0..1 --------------------------------------- */
+  float range = calMax - calMin;
+  if (range < (float)RANGE_MIN) range = (float)RANGE_MIN;
+  profondita = (emaVeloce - calMin) / range;
+  if (profondita < 0.0f) profondita = 0.0f;
+  if (profondita > 1.0f) profondita = 1.0f;
+
+  /* --- direzione: incrocio EMA veloce / EMA lenta con banda morta ---------- */
+  float pendenza   = emaVeloce - emaLenta;
+  float bandaMorta = range / 60.0f;
+  if (bandaMorta < 1.0f) bandaMorta = 1.0f;
+
+  if      (pendenza >  bandaMorta) inspirazione = true;
+  else if (pendenza < -bandaMorta) inspirazione = false;
+  /* fuori soglia mantengo la direzione precedente: isteresi                   */
+
+  /* --- scivolamento fluido fra i due trasduttori --------------------------- */
+  float target = inspirazione ? 1.0f : 0.0f;
+  flusso += (target - flusso) * SLEW_FLOW;
+}
+
+
+/* ===========================================================================
+   19.  TASK STATO  -  watchdog e transizioni
+   =========================================================================== */
+
+void taskStato(uint32_t nowMs) {
+
+  if (stato == ST_CALIB) {
+    if (nowMs >= T_CALIB_MS) {
+      /* range degenere: l'utente non ha respirato o la fascia e' troppo lasca */
+      if ((calMax - calMin) < (float)RANGE_MIN) {
+        float centro = (calMax + calMin) * 0.5f;
+        calMin = centro - 60.0f;
+        calMax = centro + 60.0f;
+#if TELEMETRIA
+        Serial.println(F("# escursione FSR insufficiente: range di ripiego"));
+#endif
+      }
+      tUltimoBattito = nowMs;   /* 3 s di grazia prima del watchdog            */
+      tFsrOk         = nowMs;
+      tShrink        = nowMs;
+      inspPrec       = inspirazione;
+      profAlTurno    = profondita;
+      stato          = ST_RUN;
+#if MIDI_ATTIVO
+      midiAvvia();              /* le voci tenute partono qui                  */
+#endif
+#if TELEMETRIA
+      Serial.print(F("# calibrazione: min=")); Serial.print((int)calMin);
+      Serial.print(F(" max="));                Serial.println((int)calMax);
+#endif
+    }
+    return;
+  }
+
+  /* guasto sensore respiro: priorita' massima                                 */
+  if ((uint32_t)(nowMs - tFsrOk) > T_FSR_FAULT_MS) { stato = ST_FSR_FAULT; return; }
+  if (stato == ST_FSR_FAULT) stato = ST_RUN;
+
+  /* SICUREZZA: watchdog battito                                               */
+  if ((uint32_t)(nowMs - tUltimoBattito) > T_PULSE_TOUT_MS) {
+    if (stato != ST_NO_PULSE) {
+      bpm      = 0.0f;
+      ibiCount = 0;
+      ibiIdx   = 0;
+      coerenza = 0.0f;
+      aggiornaRisonanza();      /* torna al default 40 Hz                      */
+    }
+    stato = ST_NO_PULSE;
+  } else if (stato == ST_NO_PULSE) {
+    stato = ST_RUN;
+  }
+}
+
+
+/* ===========================================================================
+   20.  TASK AUDIO  -  20 Hz
+   ---------------------------------------------------------------------------
+   Tre mappature, tutte continue:
+
+     volume drone      <- profondita' del respiro
+     brillantezza      <- direzione (flusso): apre in inspirazione, chiude in
+                          espirazione. E' questa che fa sembrare il suono un
+                          respiro invece di una manopola del volume.
+     volume letto      <- inverso della profondita'. La risacca avanza mentre
+                          il drone si ritira, cosi' la sonorita' complessiva
+                          resta costante e cambia solo il timbro.
+
+   E un evento: la campana al cambio di direzione, con intensita' data
+   dall'escursione dell'ultimo mezzo respiro e dalla coerenza.
+   =========================================================================== */
+
+#if MIDI_ATTIVO
+void taskAudio(uint32_t nowMs) {
+  if ((uint32_t)(nowMs - tAudioPrec) < T_AUDIO_MS) return;
+  tAudioPrec = nowMs;
+
+  /* negli stati di sicurezza il suono tace, come i trasduttori                */
+  if (stato != ST_RUN) { midiSilenzio(); return; }
+  if (audioMuto) { midiAvvia(); }
+
+  /* --- voci tenute --------------------------------------------------------- */
+  uint8_t volDrone = (uint8_t)(VOL_DRONE_MAX * (0.25f + 0.75f * profondita));
+  uint8_t briDrone = (uint8_t)(30.0f + 97.0f * flusso);
+  uint8_t volLetto = (uint8_t)(VOL_LETTO_MAX * (1.0f - 0.6f * profondita));
+
+  midiCC(MIDI_CH_DRONE, 7,  volDrone, &ccVolDrone);   /* CC7  volume           */
+  midiCC(MIDI_CH_DRONE, 74, briDrone, &ccBriDrone);   /* CC74 brillantezza     */
+  midiCC(MIDI_CH_LETTO, 7,  volLetto, &ccVolLetto);
+
+  /* --- evento: cambio di direzione ----------------------------------------- */
+  if (inspirazione != inspPrec) {
+    inspPrec = inspirazione;
+
+    /* escursione del mezzo respiro appena concluso                            */
+    float esc = profondita - profAlTurno;
+    if (esc < 0.0f) esc = -esc;
+    if (esc > 1.0f) esc = 1.0f;
+    profAlTurno = profondita;
+
+    /* la campana premia il respiro pieno E la coerenza cardiorespiratoria:
+       piu' il cuore segue il respiro, piu' il segnale e' presente             */
+    uint8_t vel = (uint8_t)(25.0f + 60.0f * esc + 40.0f * coerenza);
+    if (vel > 127) vel = 127;
+
+    if (campanaNota) midiNoteOff(MIDI_CH_CAMPANE, campanaNota);
+    /* inspirazione appena iniziata = siamo al fondo del respiro = nota bassa  */
+    campanaNota = inspirazione ? NOTA_CAMPANA_BASSA : NOTA_CAMPANA_ALTA;
+    midiNoteOn(MIDI_CH_CAMPANE, campanaNota, vel);
+    tCampanaOff = nowMs + T_CAMPANA_MS;
+  }
+
+  /* --- spegnimento programmato della campana ------------------------------- */
+  if (campanaNota && (int32_t)(nowMs - tCampanaOff) >= 0) {
+    midiNoteOff(MIDI_CH_CAMPANE, campanaNota);
+    campanaNota = 0;
+  }
+}
+#endif
+
+
+/* ===========================================================================
+   21.  TASK ATTUATORI  -  ogni giro di loop
+   =========================================================================== */
+
+void taskAttuatori(uint32_t nowUs, uint32_t nowMs) {
+
+  /* --- avanzamento della fase di risonanza --------------------------------- */
+  uint32_t dt = nowUs - tFasePrec;
+  tFasePrec = nowUs;
+  if (dt > 4000) dt = 4000;                   /* guardia contro stalli         */
+  faseAcc += faseIncUs * dt;                  /* aritmetica mod 2^32           */
+  uint8_t fase = (uint8_t)(faseAcc >> 24);
+
+  uint8_t r = 0, g = 0, b = 0;
+  /* riposo = meta' scala su entrambi i canali tattili: continua ferma,
+     nessun segnale alternato, quindi silenzio dopo il condensatore d'ingresso */
+  uint8_t tAlto = TAT_RIPOSO, tBasso = TAT_RIPOSO;
+
+  switch (stato) {
+
+    /* ---- calibrazione: respiro guida viola a 0,2 Hz, tatto fermo ---------- */
+    case ST_CALIB: {
+      uint16_t t = (uint16_t)(nowMs % 5000UL);
+      uint16_t k = (t < 2500) ? (uint16_t)((uint32_t)t * 255UL / 2500UL)
+                              : (uint16_t)((uint32_t)(5000 - t) * 255UL / 2500UL);
+      r = (uint8_t)((uint32_t)COL_CAL[0] * k / 255UL);
+      g = (uint8_t)((uint32_t)COL_CAL[1] * k / 255UL);
+      b = (uint8_t)((uint32_t)COL_CAL[2] * k / 255UL);
+      break;
+    }
+
+    /* ---- funzionamento normale ------------------------------------------- */
+    case ST_RUN: {
+      /* colore: dissolvenza ambra <-> blu su 'flusso'                          */
+      float fr = (float)COL_ESP[0] + ((float)COL_INSP[0] - (float)COL_ESP[0]) * flusso;
+      float fg = (float)COL_ESP[1] + ((float)COL_INSP[1] - (float)COL_ESP[1]) * flusso;
+      float fb = (float)COL_ESP[2] + ((float)COL_INSP[2] - (float)COL_ESP[2]) * flusso;
+
+      /* SATURAZIONE <- COERENZA CARDIORESPIRATORIA.
+         Con il cuore fuori fase dal respiro il colore sbianca; man mano che
+         la RSA si instaura il colore si satura. E' il premio visivo del
+         biofeedback: il display diventa piu' bello quando stai facendo bene. */
+      float sat  = SAT_MIN + (1.0f - SAT_MIN) * coerenza;
+      float grigio = (fr + fg + fb) / 3.0f;
+      fr = grigio + (fr - grigio) * sat;
+      fg = grigio + (fg - grigio) * sat;
+      fb = grigio + (fb - grigio) * sat;
+
+      /* luminosita' <- profondita' del respiro                                */
+      float lum = LUM_MIN + (1.0f - LUM_MIN) * profondita;
+      r = (uint8_t)(fr * lum);
+      g = (uint8_t)(fg * lum);
+      b = (uint8_t)(fb * lum);
+
+      /* tatto: sinusoide a fRisonanza, ampiezza dalla profondita',
+         ripartizione fra sterno e addome da 'flusso'                          */
+      tAlto  = livelloTattile(profondita * flusso,          fase);
+      tBasso = livelloTattile(profondita * (1.0f - flusso), fase);
+      break;
+    }
+
+    /* ---- SICUREZZA: nessun battito ---------------------------------------- */
+    case ST_NO_PULSE: {
+      tAlto = TAT_RIPOSO; tBasso = TAT_RIPOSO;
+      if (((nowMs / T_BLINK_MS) & 1UL) == 0UL) {
+        r = COL_ALERT[0]; g = COL_ALERT[1]; b = COL_ALERT[2];
+      }
+      break;
+    }
+
+    /* ---- guasto fascia respiro -------------------------------------------- */
+    case ST_FSR_FAULT: {
+      tAlto = TAT_RIPOSO; tBasso = TAT_RIPOSO;
+      if (((nowMs / (uint32_t)(T_BLINK_MS * 2)) & 1UL) == 0UL) {
+        r = COL_FAULT[0]; g = COL_FAULT[1]; b = COL_FAULT[2];
+      }
+      break;
+    }
+  }
+
+  scriviTattile(tAlto, tBasso);
+  scriviLed(r, g, b);
+
+  /* LED 13: flash a ogni battito. Serve a vedere a occhio se il filtro
+     anti-vibrazione sta tenendo mentre i trasduttori lavorano.                */
+  digitalWrite(PIN_STATUS, ((uint32_t)(nowMs - tFlashLed) < T_FLASH_MS) ? HIGH : LOW);
+}
+
+
+/* ===========================================================================
+   22.  TELEMETRIA  (alternativa al MIDI)
+   =========================================================================== */
+
+#if TELEMETRIA
+void taskTelemetria(uint32_t nowMs) {
+  if ((uint32_t)(nowMs - tTelemPrec) < T_TELEM_MS) return;
+  tTelemPrec = nowMs;
+
+  Serial.print(stato);          Serial.print(',');
+  Serial.print((int)emaVeloce); Serial.print(',');
+  Serial.print(profondita, 3);  Serial.print(',');
+  Serial.print(flusso, 3);      Serial.print(',');
+  Serial.print(bpm, 1);         Serial.print(',');
+  Serial.print(coerenza, 3);    Serial.print(',');
+  Serial.print(moltiplic);      Serial.print(',');
+  Serial.println(fRisonanza, 2);
+}
+#endif
+
+
+/* ===========================================================================
+   23.  SETUP
+   =========================================================================== */
+
+void setup() {
+#if MIDI_ATTIVO
+  Serial.begin(31250);                   /* velocita' standard MIDI            */
+#elif TELEMETRIA
+  Serial.begin(115200);
+  Serial.println(F("# NEURAL RESONANCE METHOD v2.0"));
+  Serial.println(F("stato,fsr,profondita,flusso,bpm,coerenza,molt,fHz"));
+#endif
+
+  pinMode(PIN_TAT_ALTO,  OUTPUT);
+  pinMode(PIN_TAT_BASSO, OUTPUT);
+  pinMode(PIN_LED_R,     OUTPUT);
+  pinMode(PIN_LED_G,     OUTPUT);
+  pinMode(PIN_LED_B,     OUTPUT);
+  pinMode(PIN_STATUS,    OUTPUT);
+  pinMode(PIN_VS_RESET,  OUTPUT);
+
+  scriviTattile(TAT_RIPOSO, TAT_RIPOSO); /* silenzio: meta scala, non zero     */
+  scriviLed(0, 0, 0);
+
+  /* reset del sintetizzatore: il modo MIDI si aggancia allo strapping dei
+     GPIO al rilascio del reset, quindi va fatto prima di scrivere byte MIDI   */
+  digitalWrite(PIN_VS_RESET, LOW);
+  delay(20);
+  digitalWrite(PIN_VS_RESET, HIGH);
+  delay(150);                            /* il chip si avvia                   */
+
+  configuraPWM();
+  costruisciTabellaSeno();
+
+  analogRead(PIN_FSR);                   /* prime letture scartate: il S/H     */
+  analogRead(PIN_PPG);                   /* dell'ADC deve assestarsi           */
+
+  tFsrOk    = millis();
+  tShrink   = millis();
+  tFasePrec = micros();
+
+  bpm = 0.0f;
+  aggiornaRisonanza();                   /* default sicuro: 40,00 Hz esatti    */
+}
+
+
+/* ===========================================================================
+   24.  LOOP  -  cooperativo, nessuna delay() bloccante
+   =========================================================================== */
+
+void loop() {
+  uint32_t nowUs = micros();
+  uint32_t nowMs = millis();
+
+  taskPPG(nowUs, nowMs);                 /* 500 Hz - battito                   */
+  taskRespiro(nowMs);                    /*  50 Hz - respiro e calibrazione    */
+  taskStato(nowMs);                      /*  ogni giro - watchdog e stati      */
+  taskAttuatori(nowUs, nowMs);           /*  ogni giro - fase 40 Hz, tatto, luce*/
+
+#if MIDI_ATTIVO
+  taskAudio(nowMs);                      /*  20 Hz - suono                     */
+#endif
+#if TELEMETRIA
+  taskTelemetria(nowMs);                 /*  10 Hz - CSV                       */
+#endif
+}
+
+
+/* =============================================================================
+   NOTE DI TARATURA
+
+   1) TAT_MAX: parti da 200 e SCENDI. Il biofeedback funziona meglio con uno
+      stimolo appena percepibile: se lo senti chiaramente senza cercarlo, e'
+      gia' troppo forte. Molti si fermano intorno a 120.
+
+   2) Prima accensione: compila con TELEMETRIA 1 e MIDI_ATTIVO 0, tara
+      respiro e battito sul Serial Plotter, poi inverti i due define.
+
+   3) La colonna 'coerenza' in telemetria parte da 0 e sale nell'arco di
+      una decina di battiti. Se resta bassa anche respirando lentamente,
+      il rilevamento del battito e' rumoroso: guarda il LED 13 prima di
+      dare la colpa alla fisiologia.
+
+   4) Se il drone e' troppo presente, abbassa VOL_DRONE_MAX prima di toccare
+      il volume dell'amplificatore: cosi' il rapporto fra le voci resta quello
+      progettato.
+
+   5) Catena di uscita tattile, per canale:
+
+        pin PWM ──[10k]──┬──[1k]── GND      <- attenuatore 1:11
+                         ├──[1uF]── GND     <- filtro anti-portante
+                         └──[4,7uF]── ingresso ampli   <- blocco continua
+
+      Perche' l'attenuatore. Un TPA3116 ha guadagno fisso intorno a 32 dB e
+      va in saturazione con circa 0,19 V efficaci in ingresso. Il PWM di
+      Arduino, filtrato, darebbe 1,4 V efficaci: sette volte troppo, e
+      l'amplificatore tosa il segnale in modo permanente. Il partitore
+      10k/1k porta il livello a ~0,13 V efficaci con TAT_MAX = 200: dentro
+      la finestra utile, con un po' di margine sopra.
+
+      Perche' quei valori. La resistenza equivalente vista dal condensatore
+      e' 10k in parallelo a 1k, cioe' 909 ohm; con 1 uF il taglio cade a
+      175 Hz. A 31 kHz l'attenuazione supera i 45 dB, quindi della portante
+      non resta niente; a 40 Hz la rete e' invece piatta.
+
+   6) Se il tuo modulo amplificatore ha gia' i condensatori d'ingresso in
+      serie (quasi tutti li hanno), il 4,7 uF e' ridondante ma innocuo.
+      Se NON li ha, e' l'unica cosa che impedisce a 0,27 V continui di
+      essere amplificati fino a mandare corrente continua nella bobina.
+      Nel dubbio, mettilo.
+============================================================================= */
