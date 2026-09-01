@@ -202,6 +202,42 @@ Sotto i 12 mm il pannello flette e assorbe l'energia invece di trasmetterla.
 
 In tutti i casi, la distanza fra i due punti diventa **50 cm invece dei 20 fra sterno e addome**: la distinzione fra alto e basso è più netta che nella disposizione indossata.
 
+### Comfort contro trasmissione: la stessa gommapiuma, due effetti opposti
+
+Una sessione di meditazione dura decine di minuti, e un pannello di compensato nudo diventa scomodo in fretta. La tentazione è metterci sopra un'imbottitura spessa. **È esattamente la cosa che spegne il dispositivo.**
+
+Corpo più imbottitura formano un sistema massa-molla con la sua frequenza propria:
+
+$$f_0 = \frac{1}{2\pi}\sqrt{\frac{k}{m}}$$
+
+Un materasso o una gommapiuma morbida sotto un corpo hanno $f_0$ dell'ordine di **3–8 Hz**. La trasmissibilità crolla per $f > \sqrt{2}\,f_0$, quindi a 40 Hz siamo cinque volte sopra: l'imbottitura **isola**, che è precisamente il suo mestiere. È lo stesso principio degli antivibranti sotto le lavatrici.
+
+**La simmetria da tenere a mente:** la gommapiuma che metti *sotto* il pannello per proteggere il pavimento, messa *sopra*, ti isolerebbe dalla vibrazione che vuoi sentire. Stesso materiale, stessa fisica, intenzione opposta.
+
+**Regola pratica: sottile e denso trasmette, spesso e morbido isola.**
+
+| Interfaccia | Spessore | Effetto a 40 Hz |
+|---|---|---|
+| Compensato nudo | — | trasmette tutto, scomodo dopo dieci minuti |
+| Tappetino yoga o feltro denso | 5–10 mm | trasmette bene, comfort accettabile |
+| Tappetino da campeggio | 20–40 mm | attenua parecchio |
+| Materasso, cuscino morbido | > 50 mm | isola: non senti quasi niente |
+
+**Imbottisci dove non c'è il trasduttore.** Testa, nuca e ginocchia possono avere tutto il cuscino che vuoi: lì non passa segnale. Sopra le due zone dei trasduttori serve invece contatto sottile e fermo. È una soluzione a chiazze, non uniforme, e funziona.
+
+### Da seduti, che per la meditazione è meglio
+
+Il contatto migliore non è la schiena: sono le **tuberosità ischiatiche**, le ossa su cui ci si siede. L'osso conduce la vibrazione, il tessuto molle la assorbe, e da seduti tutto il peso passa per due punti ossei.
+
+Uno **sgabello rigido o una panchetta da meditazione**, con un trasduttore avvitato sotto la seduta e uno dietro uno schienale rigido:
+
+- il trasduttore *basso* lavora contro le ossa ischiatiche — l'accoppiamento migliore disponibile sul corpo umano;
+- il trasduttore *alto* lavora sulla parte alta della schiena;
+- la mappatura respiro → alto/basso resta identica a quella pensata per sterno e addome, e la postura è quella in cui si medita davvero;
+- un cuscino sottile e denso sopra la seduta è tollerabile per un'ora.
+
+Per sessioni lunghe questa è la disposizione da preferire. Il pannello da sdraiati resta valido per sessioni brevi o per chi medita in posizione supina.
+
 ### Disaccoppiare dal pavimento
 
 Un pannello appoggiato direttamente su un pavimento rigido fa due cose sbagliate: il pavimento smorza la vibrazione, e il resto se ne va nella struttura dell'edificio. **In appartamento un trasduttore da 35 W a 40 Hz si sente dai vicini.**
