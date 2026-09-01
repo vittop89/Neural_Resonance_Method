@@ -90,10 +90,45 @@
    modulo PCA9685 via I2C, liberando D3 e D5 per i motorini.                  */
 #define DISPOSIZIONE_IBRIDA  0
 
+/* MODALITA' SHAM (controllo cieco).
+   Con il ponticello D4-GND chiuso all'accensione, la portante a 40 Hz viene
+   azzerata e TUTTO IL RESTO resta identico: luce, suono, scivolamento,
+   calcolo della coerenza, tempi. Serve a confrontare sessioni con e senza
+   stimolazione senza sapere quale si sta facendo.
+
+   Perche' un ponticello e non un #define: un #define lo decidi tu che compili,
+   quindi sai sempre in che condizione sei e il confronto non vale niente.
+   Il ponticello lo puo' mettere qualcun altro, o lo si tira a sorte e si
+   annota su un foglio da confrontare a fine ciclo di sessioni.
+   Lo stato viene registrato in EEPROM insieme al risultato della sessione,
+   e stampato solo in modalita' telemetria: durante l'uso non trapela.       */
+#define SHAM_ABILITATO  1
+
+/* INGRESSI SINTETICI.
+   A 1 i due sensori vengono sostituiti da segnali generati: respiro
+   sinusoidale a 0,2 Hz e battito a ~65 BPM con aritmia sinusale simulata.
+   Serve per sviluppare, fare demo in classe senza volontari, e soprattutto
+   per verificare la catena di rilevamento contro un segnale di cui si
+   conosce la verita'. Con l'RSA simulata l'indice di coerenza deve salire
+   verso 1: se non lo fa, il difetto e' nel codice, non nella fisiologia.   */
+#define INGRESSI_SINTETICI  0
+
+/* WATCHDOG hardware. Se il loop si blocca, l'ultimo valore PWM resterebbe
+   latchato e i trasduttori continuerebbero a vibrare all'infinito su un
+   apparecchio a contatto col corpo. Con il watchdog il micro si resetta e
+   riparte da setup(), che riporta tutto a riposo.
+   Richiede un bootloader recente (Optiboot, standard su Uno R3). Se la
+   scheda entra in reset continuo, il bootloader e' vecchio: metti 0.       */
+#define WATCHDOG_ABILITATO  1
+
 #if MIDI_ATTIVO && TELEMETRIA
 #error "MIDI_ATTIVO e TELEMETRIA usano la stessa seriale: attivane solo uno."
 #endif
 
+#include <EEPROM.h>       /* registro delle sessioni                          */
+#if WATCHDOG_ABILITATO
+#include <avr/wdt.h>
+#endif
 #if DISPOSIZIONE_IBRIDA
 #include <Wire.h>         /* libreria di sistema, non esterna                 */
 #endif
@@ -121,6 +156,7 @@ const uint8_t PIN_VS_RESET = 8;   /* reset VS1053, attivo basso               */
 const uint8_t PIN_TAT_ALTO = 9;   /* trasduttore sterno            [Timer1]   */
 const uint8_t PIN_TAT_BASSO= 10;  /* trasduttore addome            [Timer1]   */
 const uint8_t PIN_STATUS   = 13;  /* LED integrato, nessun cablaggio          */
+const uint8_t PIN_SHAM     = 4;   /* ponticello verso GND = sessione sham     */
 
 #if DISPOSIZIONE_IBRIDA
 /* I LED passano sui canali 0,1,2 del PCA9685; D3 e D5 vanno ai motorini.
@@ -337,6 +373,14 @@ bool     inspirazione = false;
 float    radAlto      = 0.0f;   /* sqrt(flusso), ripartizione motorini      */
 float    radBasso     = 1.0f;   /* sqrt(1-flusso)                           */
 #endif
+
+/* --- sham e registro sessione --------------------------------------------- */
+bool     shamAttivo   = false;  /* letto dal ponticello una volta, in setup */
+uint32_t tInizioRun   = 0;      /* millis di ingresso in ST_RUN             */
+float    coerenzaSomma= 0.0f;   /* accumulatori per la media di sessione    */
+float    bpmSomma     = 0.0f;
+uint16_t campioniSess = 0;
+uint32_t tAccum       = 0;      /* ultimo accumulo, una volta al secondo    */
 bool     inspPrec     = false;  /* per rilevare il cambio di direzione        */
 float    profAlTurno  = 0.5f;   /* profondita' all'ultimo cambio direzione    */
 uint32_t tFsrOk       = 0;
@@ -488,6 +532,9 @@ void scriviTattile(uint8_t alto, uint8_t basso) {
 /* Ampiezza tattile: da intensita' richiesta 0..1 e fase, al duty PWM.
    Sinusoide simmetrica attorno a TAT_RIPOSO: la continua non si muove mai.    */
 uint8_t livelloTattile(float k, uint8_t fase) {
+  /* CONTROLLO CIECO: in sessione sham la portante non viene mai generata.
+     Tutto il resto del sistema si comporta in modo identico.                  */
+  if (shamAttivo)       return TAT_RIPOSO;
   if (k < TAT_DEADZONE) return TAT_RIPOSO;    /* silenzio, non zero            */
   if (k > 1.0f) k = 1.0f;
 
@@ -507,6 +554,121 @@ void costruisciTabellaSeno() {
     tabSeno[i] = (uint8_t)((sin(a) * 0.5f + 0.5f) * 255.0f + 0.5f);
   }
 }
+
+
+/* ===========================================================================
+   12b.  INGRESSI: REALI O SINTETICI
+   =========================================================================== */
+
+#if INGRESSI_SINTETICI
+
+const float TAU = 6.28318531f;
+const uint32_t RESP_PERIODO_MS = 5000;   /* 0,2 Hz: respiro lento da guida    */
+
+uint32_t tProxBattito = 0;
+uint32_t tBattitoSint = 0;
+uint16_t ibiSint      = 920;
+
+/* Fase 0..1 del respiro sintetico.                                           */
+float faseRespiroSint(uint32_t nowMs) {
+  return (float)(nowMs % RESP_PERIODO_MS) / (float)RESP_PERIODO_MS;
+}
+
+/* Respiro: sinusoide centrata a meta' scala, con qualche LSB di rumore per
+   non rendere il filtro artificialmente facile.                              */
+int16_t leggiFsr(uint32_t nowMs) {
+  float s = sin(faseRespiroSint(nowMs) * TAU);
+  return 512 + (int16_t)(140.0f * s) + (int16_t)random(-4, 5);
+}
+
+/* Battito con ARITMIA SINUSALE RESPIRATORIA SIMULATA: l'intervallo R-R si
+   accorcia quando il respiro sale. E' il banco di prova dell'indice di
+   coerenza, che con questo ingresso deve salire verso 1. Se non lo fa, il
+   difetto e' nel codice.                                                     */
+int16_t leggiPpg(uint32_t nowMs) {
+  if ((int32_t)(nowMs - tProxBattito) >= 0) {
+    tBattitoSint = tProxBattito;
+    /* derivata del respiro: positiva in inspirazione -> IBI piu' corto       */
+    float c = cos(faseRespiroSint(nowMs) * TAU);
+    ibiSint = (uint16_t)(920.0f - 90.0f * c);          /* 830..1010 ms        */
+    tProxBattito = tBattitoSint + ibiSint;
+  }
+
+  float ph = (float)(nowMs - tBattitoSint) / (float)ibiSint;
+  if (ph > 1.0f) ph = 1.0f;
+
+  float a;                                              /* forma d'onda PPG   */
+  if      (ph < 0.12f) a = ph / 0.12f;                              /* salita */
+  else if (ph < 0.40f) a = 1.0f - 0.75f * (ph - 0.12f) / 0.28f;     /* discesa*/
+  else if (ph < 0.52f) a = 0.25f + 0.15f * (1.0f - fabs(ph - 0.46f) / 0.06f);
+  else                 a = 0.25f * (1.0f - (ph - 0.52f) / 0.48f);   /* coda   */
+  if (a < 0.0f) a = 0.0f;
+
+  return 480 + (int16_t)(60.0f * a) + (int16_t)random(-2, 3);
+}
+
+#else   /* ingressi reali */
+
+int16_t leggiFsr(uint32_t nowMs) { (void)nowMs; return (int16_t)analogRead(PIN_FSR); }
+int16_t leggiPpg(uint32_t nowMs) { (void)nowMs; return (int16_t)analogRead(PIN_PPG); }
+
+#endif
+
+
+/* ===========================================================================
+   12c.  REGISTRO DELLE SESSIONI IN EEPROM
+   ---------------------------------------------------------------------------
+   L'Uno ha 1 KB di EEPROM che questo progetto non usava affatto. Quattro byte
+   per sessione bastano a rendere confrontabili le sessioni sham e quelle
+   vere, che e' il punto di avere una modalita' sham.
+
+   Il record si scrive quando si toglie il sensore dal lobo, cioe' alla
+   transizione RUN -> NO_PULSE: e' il gesto naturale di fine sessione.
+   Si rileggono tutti compilando con TELEMETRIA a 1: vengono stampati
+   all'avvio, prima che parta la calibrazione.
+   =========================================================================== */
+
+const uint16_t EE_INDICE   = 0;       /* indirizzo del contatore              */
+const uint16_t EE_PRIMO    = 1;       /* primo record                         */
+const uint8_t  EE_REC_LEN  = 4;
+const uint8_t  EE_MAX_REC  = 200;     /* 200 * 4 + 1 = 801 byte su 1024       */
+const uint32_t SESS_MIN_MS = 120000;  /* sotto due minuti non e' una sessione */
+
+void salvaSessione(uint32_t durataMs) {
+  if (campioniSess == 0) return;
+
+  uint8_t idx = EEPROM.read(EE_INDICE);
+  if (idx >= EE_MAX_REC) idx = 0;     /* copre anche l'EEPROM vergine (255)   */
+  uint16_t a = EE_PRIMO + (uint16_t)idx * EE_REC_LEN;
+
+  uint32_t min32 = durataMs / 60000UL;
+  float    coer  = (coerenzaSomma / (float)campioniSess) * 100.0f;
+  float    bpmM  = bpmSomma / (float)campioniSess;
+
+  EEPROM.update(a + 0, (uint8_t)(min32 > 255 ? 255 : min32));
+  EEPROM.update(a + 1, (uint8_t)(coer > 100.0f ? 100 : (coer < 0.0f ? 0 : coer)));
+  EEPROM.update(a + 2, (uint8_t)(bpmM > 255.0f ? 255 : (bpmM < 0.0f ? 0 : bpmM)));
+  EEPROM.update(a + 3, shamAttivo ? 1 : 0);
+  EEPROM.update(EE_INDICE, idx + 1);
+}
+
+#if TELEMETRIA
+void stampaSessioni() {
+  uint8_t idx = EEPROM.read(EE_INDICE);
+  if (idx > EE_MAX_REC) { EEPROM.update(EE_INDICE, 0); idx = 0; }
+  Serial.println(F("# --- registro sessioni ---"));
+  Serial.println(F("# n,minuti,coerenza%,bpm,sham"));
+  for (uint8_t i = 0; i < idx; i++) {
+    uint16_t a = EE_PRIMO + (uint16_t)i * EE_REC_LEN;
+    Serial.print(F("# "));       Serial.print(i);              Serial.print(',');
+    Serial.print(EEPROM.read(a)); Serial.print(',');
+    Serial.print(EEPROM.read(a + 1)); Serial.print(',');
+    Serial.print(EEPROM.read(a + 2)); Serial.print(',');
+    Serial.println(EEPROM.read(a + 3));
+  }
+  Serial.println(F("# --- fine registro ---"));
+}
+#endif
 
 
 /* ===========================================================================
@@ -672,7 +834,7 @@ void taskPPG(uint32_t nowUs, uint32_t nowMs) {
   if ((uint32_t)(nowUs - tPpgPrec) < T_PPG_US) return;
   tPpgPrec = nowUs;
 
-  int16_t raw = (int16_t)analogRead(PIN_PPG);
+  int16_t raw = leggiPpg(nowMs);
 
   /* inviluppo: sale subito, si restringe piano                                */
   if (raw > ppgPicco) ppgPicco = raw;
@@ -716,7 +878,7 @@ void taskRespiro(uint32_t nowMs) {
   if ((uint32_t)(nowMs - tRespPrec) < T_RESP_MS) return;
   tRespPrec = nowMs;
 
-  int16_t raw = (int16_t)analogRead(PIN_FSR);
+  int16_t raw = leggiFsr(nowMs);
 
   /* lettura incollata a fondoscala = fascia scollegata o partitore in corto   */
   if (raw > 5 && raw < 1018) tFsrOk = nowMs;
@@ -812,6 +974,8 @@ void taskStato(uint32_t nowMs) {
       tShrink        = nowMs;
       inspPrec       = inspirazione;
       profAlTurno    = profondita;
+      tInizioRun     = nowMs;      /* inizio sessione                        */
+      tAccum         = nowMs;
       stato          = ST_RUN;
 #if MIDI_ATTIVO
       midiAvvia();              /* le voci tenute partono qui                  */
@@ -828,9 +992,28 @@ void taskStato(uint32_t nowMs) {
   if ((uint32_t)(nowMs - tFsrOk) > T_FSR_FAULT_MS) { stato = ST_FSR_FAULT; return; }
   if (stato == ST_FSR_FAULT) stato = ST_RUN;
 
+  /* Accumulo per il registro di sessione: una volta al secondo, e solo con un
+     battito valido, altrimenti la media verrebbe diluita dai vuoti.          */
+  if (stato == ST_RUN && (uint32_t)(nowMs - tAccum) >= 1000) {
+    tAccum = nowMs;
+    if (bpm > 0.0f && campioniSess < 65000) {
+      coerenzaSomma += coerenza;
+      bpmSomma      += bpm;
+      campioniSess++;
+    }
+  }
+
   /* SICUREZZA: watchdog battito                                               */
   if ((uint32_t)(nowMs - tUltimoBattito) > T_PULSE_TOUT_MS) {
     if (stato != ST_NO_PULSE) {
+      /* Togliere il sensore dal lobo e' il gesto con cui finisce la sessione:
+         e' qui che il record va in EEPROM.                                   */
+      uint32_t durata = nowMs - tInizioRun;
+      if (durata >= SESS_MIN_MS) salvaSessione(durata);
+      coerenzaSomma = 0.0f;
+      bpmSomma      = 0.0f;
+      campioniSess  = 0;
+
       bpm      = 0.0f;
       ibiCount = 0;
       ibiIdx   = 0;
@@ -839,7 +1022,9 @@ void taskStato(uint32_t nowMs) {
     }
     stato = ST_NO_PULSE;
   } else if (stato == ST_NO_PULSE) {
-    stato = ST_RUN;
+    tInizioRun = nowMs;         /* rimesso il sensore: nuova sessione         */
+    tAccum     = nowMs;
+    stato      = ST_RUN;
   }
 }
 
@@ -1044,6 +1229,13 @@ void taskTelemetria(uint32_t nowMs) {
    =========================================================================== */
 
 void setup() {
+#if WATCHDOG_ABILITATO
+  /* Disabilitato subito: setup() contiene delay() lunghi, e un watchdog gia'
+     armato al reset farebbe ripartire la scheda a ciclo continuo.            */
+  MCUSR = 0;
+  wdt_disable();
+#endif
+
 #if MIDI_ATTIVO
   Serial.begin(31250);                   /* velocita' standard MIDI            */
 #elif TELEMETRIA
@@ -1056,6 +1248,20 @@ void setup() {
   pinMode(PIN_TAT_BASSO, OUTPUT);
   pinMode(PIN_STATUS,    OUTPUT);
   pinMode(PIN_VS_RESET,  OUTPUT);
+
+  /* Ponticello sham: letto una sola volta, all'accensione. Chiuso verso GND
+     significa sessione di controllo, senza portante a 40 Hz.                 */
+  pinMode(PIN_SHAM, INPUT_PULLUP);
+  delay(2);                              /* lascia salire il pull-up          */
+#if SHAM_ABILITATO
+  shamAttivo = (digitalRead(PIN_SHAM) == LOW);
+#endif
+
+#if TELEMETRIA
+  stampaSessioni();                      /* registro, prima della taratura    */
+  Serial.print(F("# sessione corrente: "));
+  Serial.println(shamAttivo ? F("SHAM, nessun 40 Hz") : F("attiva"));
+#endif
 
 #if DISPOSIZIONE_IBRIDA
   pinMode(PIN_MOT_ALTO,  OUTPUT);
@@ -1090,6 +1296,12 @@ void setup() {
 
   bpm = 0.0f;
   aggiornaRisonanza();                   /* default sicuro: 40,00 Hz esatti    */
+
+#if WATCHDOG_ABILITATO
+  /* Armato solo ora, a delay() finiti. Il loop gira a qualche kHz: mezzo
+     secondo e' larghissimo e intercetta solo i blocchi veri.                 */
+  wdt_enable(WDTO_500MS);
+#endif
 }
 
 
@@ -1098,6 +1310,9 @@ void setup() {
    =========================================================================== */
 
 void loop() {
+#if WATCHDOG_ABILITATO
+  wdt_reset();
+#endif
   uint32_t nowUs = micros();
   uint32_t nowMs = millis();
 
