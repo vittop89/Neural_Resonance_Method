@@ -35,7 +35,7 @@ Il progetto è stato scritto con i conti in chiaro. Non è "collega questo qui e
 - Legge di potenza: la correzione gamma esiste perché la percezione è logaritmica.
 
 **Fisica**
-- Filtri RC: frequenza di taglio, attenuazione in dB, resistenza equivalente di Thévenin. Il filtro del progetto attenua la portante di 46 dB e lascia passare il segnale utile intatto — e si misura con un multimetro da 18 €.
+- Filtri RC: frequenza di taglio, attenuazione in dB, resistenza equivalente di Thévenin. Il filtro del progetto attenua la portante di 45 dB e lascia passare il segnale utile intatto — e si misura con un multimetro da 18 €.
 - Risonanza: il trasduttore ha Fs = 30 Hz e si usa a 40 Hz, appena sopra la risonanza.
 - Dissipazione in un MOSFET: P = I²R, e il confronto fra due componenti quasi identici che a 5 V di pilotaggio si comportano in modo opposto.
 - Modulazione di larghezza d'impulso, valore medio, e perché il valore medio deve restare fisso mentre l'ampiezza varia.
