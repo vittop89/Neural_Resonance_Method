@@ -283,6 +283,24 @@ Due BST-2 sotto il pannello per il primo, due micromotori a moneta sulla fascia 
 
 **Perché non serve un attuatore serio sul corpo.** Il canale «dove» non trasporta frequenza: trasporta una rampa di intensità con costante di tempo di qualche centinaio di millisecondi. Un motorino da 10 mm e pochi grammi la esegue perfettamente, e il torace resta libero di respirare.
 
+#### Dove vanno i motorini, e perché si sente scivolare
+
+Sì, su una linea verticale mediana, ma **non agli estremi**: uno sul basso sterno, all'altezza del processo xifoideo, e uno due o tre dita sopra l'ombelico. Circa **15–20 cm di distanza**, non i 25–30 dello sterno alto.
+
+La ragione è che la sensazione di scivolamento non è un effetto scenico: è un fenomeno percettivo documentato, la **sensazione fantasma** descritta da von Békésy. Due punti che vibrano vicini non producono due sensazioni distinte: il sistema tattile ne fonde **una sola**, collocata fra i due, e la sua posizione dipende dal rapporto delle ampiezze. Variando quel rapporto in modo continuo, il punto percepito si muove.
+
+Ma la fusione funziona solo entro una certa distanza. Troppo lontani e non si fondono più: si sentono due motorini che si alternano, che è tutta un'altra cosa. Da qui i 15–20 cm.
+
+**La ripartizione deve essere a radice quadrata, non lineare.** Perché il punto si sposti *senza* che l'intensità cali a metà corsa, le due ampiezze devono conservare l'energia:
+
+$$A_{alto} = \sqrt{k}\,, \qquad A_{basso} = \sqrt{1-k}$$
+
+Con ripartizione lineare, a metà strada si ha 0,5 e 0,5: la somma dei quadrati vale 0,5 contro l'1,0 degli estremi, cioè **l'energia dimezza e si sente un buco** proprio nel mezzo del percorso. Con la radice si ha 0,707 e 0,707, somma dei quadrati 1,0, costante. È la stessa legge del panning a potenza costante in audio, e nel firmware è già implementata così.
+
+> **Limite onesto dei motori a massa eccentrica.** In un ERM la frequenza di vibrazione *è* la velocità di rotazione, quindi cambia insieme all'ampiezza: mentre uno cala e l'altro sale, i due vibrano a frequenze diverse. La fusione percettiva funziona meglio quando i due punti condividono la stessa frequenza, quindi con gli ERM lo scivolamento risulta più confuso di quanto potrebbe essere. Due LRA con driver dedicato darebbero una sensazione molto più netta, a costo di complicare il progetto. Vale la pena provare prima con i motorini: se l'effetto delude, si sa già dove intervenire.
+
+**Fissaggio.** La fascia toracica tiene l'FSR e il motorino alto; per quello basso serve una linguetta elastica che scende dalla fascia, oppure un secondo giro sottile in vita. I motorini vanno fra fascia e corpo, su pelle o indumento sottile: sopra un maglione non trasmettono.
+
 #### Il vincolo: mancano canali PWM
 
 Questa disposizione richiede **sette canali PWM**, e l'Uno ne ha sei.

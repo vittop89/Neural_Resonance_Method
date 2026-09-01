@@ -333,6 +333,10 @@ float    calMax       = 0.0f;
 float    profondita   = 0.0f;   /* 0 = polmoni vuoti, 1 = polmoni pieni       */
 float    flusso       = 0.0f;   /* 0 = espirazione,   1 = inspirazione        */
 bool     inspirazione = false;
+#if DISPOSIZIONE_IBRIDA
+float    radAlto      = 0.0f;   /* sqrt(flusso), ripartizione motorini      */
+float    radBasso     = 1.0f;   /* sqrt(1-flusso)                           */
+#endif
 bool     inspPrec     = false;  /* per rilevare il cambio di direzione        */
 float    profAlTurno  = 0.5f;   /* profondita' all'ultimo cambio direzione    */
 uint32_t tFsrOk       = 0;
@@ -760,6 +764,29 @@ void taskRespiro(uint32_t nowMs) {
   /* --- scivolamento fluido fra i due trasduttori --------------------------- */
   float target = inspirazione ? 1.0f : 0.0f;
   flusso += (target - flusso) * SLEW_FLOW;
+
+#if DISPOSIZIONE_IBRIDA
+  /* Ripartizione a RADICE QUADRATA per i due motorini sul corpo.
+
+     Due punti che vibrano vicini non danno due sensazioni distinte: il
+     sistema tattile ne fonde una sola, collocata fra i due, e la sua
+     posizione dipende dal rapporto delle ampiezze. E' la "sensazione
+     fantasma" descritta da von Bekesy, ed e' proprio cio' che produce
+     l'impressione di scivolamento lungo lo sterno.
+
+     Perche' il punto si sposti SENZA che l'intensita' cali a meta' corsa,
+     le due ampiezze devono conservare l'energia. Con ripartizione lineare
+     a meta' strada si ha 0,5 e 0,5: la somma dei quadrati vale 0,5 contro
+     l'1,0 degli estremi, cioe' l'energia dimezza e si sente un buco.
+     Con la radice si ha 0,707 e 0,707: somma dei quadrati 1,0, costante.
+     E' la stessa legge del panning a potenza costante in audio.
+
+     Calcolate qui, a 50 Hz, e non nel loop degli attuatori: sqrt() su AVR
+     costa decine di microsecondi e nel loop girerebbe migliaia di volte
+     al secondo, rubando tempo alla fase dei 40 Hz.                          */
+  radAlto  = sqrt(flusso);
+  radBasso = sqrt(1.0f - flusso);
+#endif
 }
 
 
@@ -948,13 +975,14 @@ void taskAttuatori(uint32_t nowUs, uint32_t nowMs) {
       tBasso = livelloTattile(profondita * (1.0f - flusso), fase);
 
 #if DISPOSIZIONE_IBRIDA
-      /* Il "dove" sul torso. Stessa ripartizione 'flusso' che pilota il
-         colore e i trasduttori, ma su un fondo che non scende mai a zero:
+      /* Il "dove" sul torso. Ripartizione a radice quadrata (vedi
+         taskRespiro) per far scivolare la sensazione fantasma senza cali
+         di intensita' a meta' corsa, su un fondo che non scende mai a zero:
          a fine espirazione la vibrazione deve essere debole, non assente,
          altrimenti si perde l'informazione di posizione.                     */
       float ampMot = MOT_FONDO + (1.0f - MOT_FONDO) * profondita;
-      mAlto  = livelloMotore(ampMot * flusso);
-      mBasso = livelloMotore(ampMot * (1.0f - flusso));
+      mAlto  = livelloMotore(ampMot * radAlto);
+      mBasso = livelloMotore(ampMot * radBasso);
 #endif
       break;
     }
