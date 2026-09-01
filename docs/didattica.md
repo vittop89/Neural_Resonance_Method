@@ -216,6 +216,29 @@ Il firmware confronta, a ogni battito, la direzione dell'intervallo R-R con la d
 
 ---
 
+## 10. Costruire il proprio gruppo di controllo
+
+**Metodo sperimentale — forse il percorso più utile di tutti**
+
+Il dispositivo stimola. Nulla, in sé, dice se la stimolazione faccia qualcosa. È la differenza fra «l'ho costruito» e «ho verificato che funziona», e nei progetti didattici di elettronica quella differenza viene quasi sempre saltata.
+
+Il firmware ha una **modalità sham**: un ponticello fra D4 e massa azzera la portante a 40 Hz e lascia identico tutto il resto — luce, suono, scivolamento, calcolo della coerenza, tempi di risposta. Chi la usa non può accorgersene.
+
+Il ponticello non è un'opzione di compilazione di proposito: chi compila saprebbe sempre in quale condizione si trova, e il confronto non varrebbe niente. Con il ponticello la condizione la può impostare un'altra persona, oppure si tira a sorte annotando l'esito su un foglio da aprire solo alla fine.
+
+Ogni sessione finisce in EEPROM con durata, coerenza media, BPM medio e il flag sham. Dopo venti sessioni si hanno due gruppi da confrontare.
+
+**Da discutere in classe**
+
+- Perché il confronto va fatto *in cieco*, e cosa cambierebbe se chi usa l'apparecchio sapesse in quale condizione si trova.
+- Perché serve alternare le condizioni invece di fare prima dieci sessioni vere e poi dieci sham. *Deriva temporale: si migliora comunque nel respirare, e l'ordine confonderebbe l'effetto con l'allenamento.*
+- Con venti sessioni e una differenza di pochi punti percentuali sulla coerenza, **si può concludere qualcosa?** Ingresso naturale alla variabilità campionaria e al perché una differenza osservata non basta da sola.
+- L'indice di coerenza non è tarato contro nessuna misura di riferimento. Che cosa servirebbe per chiamarlo misura invece che indicatore?
+
+C'è anche un banco di prova per il codice: con `INGRESSI_SINTETICI` il firmware genera respiro e battito, e nel battito simula un'aritmia sinusale **nota**. Con quell'ingresso l'indice di coerenza deve salire verso 1. Se non lo fa, il difetto è nel codice e non nella fisiologia — che è esattamente il modo di distinguere un errore di misura da un fenomeno.
+
+---
+
 ## Nota di metodo
 
 Il file [VERIFICATION.md](../hardware/VERIFICATION.md) elenca **quattro errori di progetto trovati rileggendo le schede tecniche**, di cui due avrebbero danneggiato hardware e uno avrebbe reso il dispositivo inutilizzabile senza che se ne capisse la ragione.

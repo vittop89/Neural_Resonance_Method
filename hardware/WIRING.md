@@ -15,8 +15,9 @@ Cinque canali PWM su sei disponibili. La scelta non è arbitraria: determina qua
 | D3 | gate MOSFET · LED rosso | Timer2 | 490 Hz | default |
 | D5 | gate MOSFET · LED verde | Timer0 | 976 Hz | **prescaler mai toccato** |
 | D6 | gate MOSFET · LED blu | Timer0 | 976 Hz | **prescaler mai toccato** |
+| D4 | ponticello sham verso GND | — | — | chiuso all'accensione = sessione di controllo |
 | D13 | LED integrato, flash a ogni battito | — | — | diagnostica |
-| liberi | D2, D4, D7, D11, D12, A2–A5 | | | riservati alla via SPI di ripiego |
+| liberi | D2, D7, D11, D12, A2–A5 | | | riservati alla via SPI di ripiego |
 
 **Timer0 governa `millis()`, `micros()` e `delay()`.** Il suo prescaler non viene mai modificato: `analogWrite()` sui pin 5 e 6 scrive solo il duty (OCR0A/OCR0B), non la frequenza di conteggio, quindi è sicuro. Timer1 e Timer2 sono liberi e vengono riprogrammati.
 

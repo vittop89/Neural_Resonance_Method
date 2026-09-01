@@ -20,7 +20,21 @@ Due sensori in ingresso — una fascia toracica con sensore di forza, un sensore
 | **Coerenza cardiorespiratoria** (0–1) | — | saturazione del colore | intensità della campana |
 | **Cambio di direzione** (evento) | — | — | campana: acuta al vertice, grave al fondo |
 
-L'ultima riga della colonna "Luce" è la parte interessante. La saturazione del colore non segue il respiro: segue **quanto il cuore sta rispondendo al respiro**. È l'unica misura che usa entrambi i sensori insieme, e l'unica che non si può falsificare con la volontà.
+L'ultima riga della colonna "Luce" è la parte interessante. La saturazione del colore non segue il respiro: segue **quanto il cuore sta rispondendo al respiro** — l'aritmia sinusale respiratoria. È l'unico indicatore che usa entrambi i sensori insieme, e l'unico che non si può falsificare con la volontà.
+
+> **Attenzione a quanto pesa quel numero.** L'indice di coerenza è stato costruito appositamente per questo progetto: una media mobile della concordanza fra direzione dell'intervallo R-R e direzione del respiro. È plausibile e si comporta ragionevolmente, ma **non è tarato contro niente** e non corrisponde alle misure spettrali usate nella letteratura sull'HRV. È un indicatore di riscontro, non una misura. Nel resto del repository i numeri sono verificati sulle schede dei costruttori; questo no, ed è giusto saperlo.
+
+## Tre modalità di lavoro
+
+| Modalità | Come si attiva | A cosa serve |
+|---|---|---|
+| **Sham** | ponticello D4 verso GND all'accensione | Sessione di controllo: la portante a 40 Hz non viene generata, **tutto il resto è identico**. Serve a confrontare sessioni con e senza stimolazione senza sapere quale si sta facendo |
+| **Ingressi sintetici** | `#define INGRESSI_SINTETICI 1` | Respiro e battito generati dal firmware, con aritmia sinusale simulata. Sviluppo, debug e dimostrazioni in classe senza sensori né volontari |
+| **Telemetria** | `#define TELEMETRIA 1` | CSV a 115200, e all'avvio stampa il registro delle sessioni salvate in EEPROM |
+
+Il ponticello sham non è un `#define` di proposito: un `#define` lo decide chi compila, che quindi sa sempre in quale condizione si trova, e il confronto non vale niente. Il ponticello lo può mettere un'altra persona, o lo si tira a sorte annotando l'esito su un foglio da aprire alla fine.
+
+Ogni sessione più lunga di due minuti finisce nel **registro in EEPROM**: durata, coerenza media, BPM medio e flag sham, quattro byte per sessione, fino a 200 sessioni. Il record si scrive quando si toglie il sensore dal lobo, che è il gesto naturale di fine sessione. Si rileggono compilando con `TELEMETRIA 1`.
 
 ---
 
