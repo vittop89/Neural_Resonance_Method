@@ -264,6 +264,57 @@ Uno **sgabello rigido o una panchetta da meditazione**, con un trasduttore avvit
 
 Per sessioni lunghe questa è la disposizione da preferire. Il pannello da sdraiati resta valido per sessioni brevi o per chi medita in posizione supina.
 
+### Disposizione C — ibrida: il «cosa» da sotto, il «dove» da sopra
+
+Le due funzioni che finora stavano insieme sui trasduttori sono in realtà separabili, e hanno bisogni opposti.
+
+| | Cosa fa | Cosa richiede | Dove va |
+|---|---|---|---|
+| **Portante 40 Hz** | vibrazione agganciata al battito, sempre presente, posizione fissa | forza, quindi massa e appoggio rigido | **sotto la schiena**, dove la massa non costa niente |
+| **Scivolamento alto/basso** | intensità che si sposta da sterno ad addome col respiro | variazione lenta, nessun bisogno di 40 Hz | **sul torso**, pochi grammi |
+
+Due BST-2 sotto il pannello per il primo, due micromotori a moneta sulla fascia per il secondo. Si sentono i 40 Hz nella schiena *e* la vibrazione che sale e scende sul torace — che è la parte percettivamente viva del biofeedback — senza mettere due chili sulla gabbia toracica che si sta misurando.
+
+**Perché non serve un attuatore serio sul corpo.** Il canale «dove» non trasporta frequenza: trasporta una rampa di intensità con costante di tempo di qualche centinaio di millisecondi. Un motorino da 10 mm e pochi grammi la esegue perfettamente, e il torace resta libero di respirare.
+
+#### Il vincolo: mancano canali PWM
+
+Questa disposizione richiede **sette canali PWM**, e l'Uno ne ha sei.
+
+| Canale | Quantità | Vincolo |
+|---|---|---|
+| Trasduttori tattili | 2 | obbligatoriamente Timer1 (D9, D10) a 31 kHz |
+| Striscia LED R, G, B | 3 | — |
+| Motorini sul corpo | 2 | — |
+| **Totale** | **7** | **disponibili: 6** |
+
+Due modi di chiuderla.
+
+**Con un espansore PWM — consigliato.** Un modulo **PCA9685** su I²C (A4 e A5 sono liberi) porta 16 canali a 12 bit, alimentato a 5 V dà logica a 5 V, e costa 7,99 €. Ci si spostano i tre canali LED, liberando D3, D5 e D6 sull'Arduino: restano quattro pin PWM nativi per due motorini e due di scorta. Nessun compromesso, e spazio per crescere.
+
+**Senza comprare niente.** Si rinuncia al canale verde della striscia: la dissolvenza diventa rosso ↔ blu invece di ambra ↔ blu, e D5 o D6 si libera. Costo zero, ma si perde anche il **giallo dello stato di allarme**, che dovrebbe diventare magenta — lo stesso colore già usato per il guasto FSR. Restano distinguibili solo dalla cadenza del lampeggio. Su un indicatore di sicurezza è un peggioramento vero: se il budget lo consente, meglio i sette euro dell'espansore.
+
+#### Tornano i diodi di ricircolo
+
+I micromotori **sono carichi induttivi**, a differenza dei trasduttori e dei LED. Su questa disposizione i due `1N5819` che erano usciti dalla distinta rientrano: catodo al positivo, anodo al drain, uno per motorino. Senza, i picchi induttivi rientrano nell'ADC e rovinano la lettura del battito — che è esattamente il problema che la versione a motori aveva.
+
+Servono anche due canali MOSFET: i moduli D4184 avanzati dalla confezione da cinque bastano.
+
+#### Componenti aggiuntivi
+
+| Prodotto | Qtà | € |
+|---|---|---|
+| [Micromotori a vibrazione 10 × 2,7 mm, 3 V, 10 pz](https://www.amazon.it/dp/B0F42P63PW) | 1 | 15,99 |
+| [Modulo PCA9685, 16 canali PWM su I²C](https://www.amazon.it/dp/B0BKZC1XWR) | 1 | 7,99 |
+| Diodi 1N5819 e moduli D4184 | — | già in distinta |
+| **Totale sulla disposizione base** | | **+23,98 €** |
+
+I motorini sono da 3 V: alimentati dai 5 V vanno limitati via duty a un massimo intorno al 60%, oppure con una resistenza in serie.
+
+#### Firmware
+
+Entrambe le logiche esistono già nel repository e non vanno scritte da zero: la `v2` calcola la sinusoide a 40 Hz per i trasduttori, la `v1` calcola la ripartizione lenta `flusso` / `1 − flusso` per i motori. La versione ibrida le usa insieme — la stessa variabile `flusso` che pilota il colore pilota anche i due motorini, mentre `profondita` continua a fissare l'ampiezza dei trasduttori.
+
 ### Disaccoppiare dal pavimento
 
 Un pannello appoggiato direttamente su un pavimento rigido fa due cose sbagliate: il pavimento smorza la vibrazione, e il resto se ne va nella struttura dell'edificio. **In appartamento un trasduttore da 35 W a 40 Hz si sente dai vicini.**

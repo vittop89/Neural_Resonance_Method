@@ -60,3 +60,21 @@ Non serve un multimetro True RMS: la verifica dell'attenuatore audio si fa in co
 | **Consigliata** (Adafruit VS1053 + kit saldatore) | **443,94 €** |
 | Con riserva PPG | 453,43 € |
 | Tutto, oscilloscopio compreso | 513,42 € |
+
+## Disposizione ibrida — opzionale, +23,98 €
+
+Separa la portante a 40 Hz (trasduttori sotto il pannello) dallo scivolamento
+alto/basso col respiro (micromotori leggeri sulla fascia toracica). Vedi
+[WIRING.md](WIRING.md#disposizione-c--ibrida-il-cosa-da-sotto-il-dove-da-sopra).
+
+| Prodotto | Qtà | € |
+|---|---|---|
+| [Micromotori a vibrazione 10 × 2,7 mm, 3 V, 10 pz](https://www.amazon.it/dp/B0F42P63PW) | 1 | 15,99 |
+| [Modulo PCA9685, 16 canali PWM su I²C](https://www.amazon.it/dp/B0BKZC1XWR) | 1 | 7,99 |
+
+Il PCA9685 serve perché questa disposizione richiede sette canali PWM e l'Uno
+ne ha sei. In alternativa si rinuncia al canale verde della striscia LED, a
+costo zero ma perdendo il giallo dello stato di allarme.
+
+I due diodi `1N5819` e due moduli MOSFET `D4184` servono anche qui: sono già
+nella lista base.
