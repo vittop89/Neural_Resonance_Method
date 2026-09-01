@@ -45,19 +45,45 @@ Il progetto è stato scritto con i conti in chiaro. Non è "collega questo qui e
 
 ---
 
+## Come si monta: tre disposizioni
+
+I trasduttori tattili pesano **1,18 kg l'uno** e la loro scheda tecnica dice di installarli su una superficie piana. Non è una questione di comodità: un trasduttore inerziale funziona reagendo contro la propria massa, e ha bisogno di qualcosa di rigido a cui trasferire l'energia. Sul corpo il tessuto molle assorbe quasi tutto.
+
+Ed è una conseguenza della fisica, non del prodotto: per muovere massa a 40 Hz servono massa ed escursione. Un attuatore leggero non può erogare forza apprezzabile a quella frequenza. **Il peso è la prestazione.**
+
+| | Dove va la vibrazione | Cosa serve costruire |
+|---|---|---|
+| **A · Mobile esistente** | trasduttori avvitati sotto la seduta e dietro lo schienale di una sedia di legno, o su due doghe del letto | niente |
+| **B · Pannello** | compensato o MDF 15–18 mm, 40 × 90 cm, trasduttori bullonati sotto, ci si sdraia sopra | un taglio in ferramenta |
+| **C · Ibrida** | i 40 Hz restano sotto la schiena; due micromotori sulla fascia toracica portano lo scivolamento sterno ↔ addome | come B, più 23,98 € di componenti |
+
+La **disposizione C** separa due funzioni che hanno bisogni opposti. La portante a 40 Hz vuole forza, quindi massa, quindi un appoggio rigido: va sotto la schiena, dove la massa non costa niente. Lo scivolamento alto/basso col respiro è invece una rampa lenta di intensità, e la esegue benissimo un motorino da pochi grammi. Così si sente la vibrazione muoversi sul torace **senza caricare di massa la gabbia toracica che il dispositivo sta misurando** — che sarebbe un confondimento della misura, non solo un fastidio.
+
+Sul firmware è un solo `#define`:
+
+```cpp
+#define DISPOSIZIONE_IBRIDA  0   // 0 = base, 1 = con i motorini sul corpo
+```
+
+A 1 i tre canali LED passano su un espansore PCA9685 via I²C, liberando due pin PWM nativi per i motorini: la disposizione ibrida richiede sette canali PWM e l'Uno ne ha sei.
+
+Dettagli, quote e vincoli in [hardware/WIRING.md](hardware/WIRING.md#montaggio-meccanico) — compreso il perché l'imbottitura spessa spegne il dispositivo, dove vanno i LED se si medita da sdraiati, e quali punti del corpo si possono imbottire senza perdere l'accoppiamento.
+
 ## Struttura del repository
 
 ```
 firmware/
-  nrm_v2_trasduttori/   firmware corrente: 40 Hz reali, sintesi MIDI, coerenza RSA
+  nrm_v2_trasduttori/   firmware corrente: 40 Hz reali, sintesi MIDI, coerenza
+                        RSA, e il #define per la disposizione ibrida
   nrm_v1_erm/           prima versione con motori a massa eccentrica (vedi sotto)
 hardware/
   BOM.md                distinta con link, prezzi e quantità
-  WIRING.md             schema dei collegamenti, nodo per nodo
+  WIRING.md             collegamenti, dimensionamenti e montaggio meccanico
   VERIFICATION.md       verifica incrociata su schede tecniche + bilancio di potenza
 docs/
   didattica.md          i percorsi di matematica e fisica, con i conti
 SAFETY.md               leggere prima di costruire
+NOTICE.md               avvertenze legali e licenze
 ```
 
 ### Perché ci sono due versioni del firmware
