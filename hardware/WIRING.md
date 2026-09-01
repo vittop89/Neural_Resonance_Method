@@ -2,26 +2,92 @@
 
 ## Mappa pin
 
-Cinque canali PWM su sei disponibili. La scelta non è arbitraria: determina quale timer resta intatto.
+Il progetto è su **ESP32-WROOM-32**, scheda DevKit a 38 pin. Tre limiti reali del chip hanno deciso quasi tutta la mappa:
 
-| Pin | Funzione | Timer | Freq. PWM | Nota |
-|---|---|---|---|---|
-| A0 | FSR402 — respiro | — | — | partitore con 10 kΩ |
-| A1 | Pulse Sensor — filo viola | — | — | campionato a 500 Hz |
-| D1 | TX → pin `Rx` del VS1053 | — | 31250 bd | MIDI. Staccare durante l'upload |
-| D8 | reset VS1053 | — | — | attivo basso, rilasciato in `setup()` |
-| D9 | tattile sterno → rete RC → ampli L | Timer1 | 31 372 Hz | prescaler /1 |
-| D10 | tattile addome → rete RC → ampli R | Timer1 | 31 372 Hz | prescaler /1 |
-| D3 | gate MOSFET · LED rosso | Timer2 | 490 Hz | default |
-| D5 | gate MOSFET · LED verde | Timer0 | 976 Hz | **prescaler mai toccato** |
-| D6 | gate MOSFET · LED blu | Timer0 | 976 Hz | **prescaler mai toccato** |
-| D4 | ponticello sham verso GND | — | — | chiuso all'accensione = sessione di controllo |
-| D13 | LED integrato, flash a ogni battito | — | — | diagnostica |
-| liberi | D2, D7, D11, D12, A2–A5 | | | riservati alla via SPI di ripiego |
+1. **ADC2 non funziona quando il Wi-Fi è attivo** → ogni ingresso analogico deve stare su ADC1, cioè GPIO 32–39.
+2. **I DAC esistono solo su GPIO 25 e 26** e non sono spostabili altrove.
+3. **GPIO 6–11 sono la flash SPI** e non vanno toccati; **34–39 sono solo ingresso** e senza pull-up; **0, 2, 12, 15** sono pin di strapping.
 
-**Timer0 governa `millis()`, `micros()` e `delay()`.** Il suo prescaler non viene mai modificato: `analogWrite()` sui pin 5 e 6 scrive solo il duty (OCR0A/OCR0B), non la frequenza di conteggio, quindi è sicuro. Timer1 e Timer2 sono liberi e vengono riprogrammati.
+| GPIO | Funzione | Nota |
+|---|---|---|
+| 34 | FSR402 — respiro | ADC1_CH6, solo ingresso: va bene, è un analogico |
+| 21 | I²C SDA → MAX30102 | il sensore è a 3,3 V, **nessun traslatore** |
+| 22 | I²C SCL → MAX30102 | |
+| 25 | **DAC1** → partitore → ampli L | trasduttore sterno |
+| 26 | **DAC2** → partitore → ampli R | trasduttore addome |
+| 18 | I²S BCK → PCM5102A | |
+| 19 | I²S LRCK → PCM5102A | |
+| 23 | I²S DIN → PCM5102A | |
+| 16 | LED rosso → 74HCT245 → gate MOSFET | |
+| 17 | LED verde → 74HCT245 | |
+| 4 | LED blu → 74HCT245 | |
+| 27 | motorino sterno (ibrida) → 74HCT245 | |
+| 13 | motorino addome (ibrida) → 74HCT245 | |
+| 33 | ponticello sham verso GND | pull-up interno |
+| 2 | LED di stato | integrato sulla scheda, zero cablaggio |
+| liberi | 5, 14, 15, 32, 35, 36, 39 | |
 
-Timer1 va a 31 372 Hz perché la portante PWM deve finire il più lontano possibile dai 40 Hz: così il filtro RC la cancella completamente e resta una sinusoide pulita.
+Nessun timer da spartire e nessun prescaler da proteggere: il **LEDC ha 16 canali PWM indipendenti** e il canale tattile ha un timer hardware tutto suo. Tutta la sezione sui timer che serviva sull'Uno è sparita.
+
+---
+
+## Il canale tattile è diventato banale
+
+È la semplificazione più grande del passaggio all'ESP32.
+
+Sull'Uno il 40 Hz nasceva da un PWM a 31 kHz, e serviva una rete RC per cancellare la portante più un attenuatore per non saturare l'amplificatore — con tanto di collaudo in continua a tre punti per verificare che il rapporto fosse giusto.
+
+**L'ESP32 ha due convertitori digitale-analogico veri.** Escono già tensioni analogiche: nessuna portante, nessun filtro anti-alias, nessun collaudo. Un interrupt di timer a 4 kHz scrive cento campioni per ogni ciclo da 40 Hz, contro i pochi gradini che il PWM a 8 bit riusciva a dare.
+
+```
+GPIO25 (o 26) ──[10 kΩ]──┬──[1,5 kΩ]── GND        ← solo per il livello
+                         └──[4,7 µF]── ingresso amplificatore
+
+TPA3116 uscita L ──── trasduttore STERNO
+TPA3116 uscita R ──── trasduttore ADDOME
+```
+
+Il DAC dell'ESP32 esce fra 0 e ~3,2 V. L'ampiezza utile è ±100 conteggi su 128 attorno a metà scala, cioè circa **1,1 V picco-picco**; il partitore 10 kΩ / 1,5 kΩ la porta a **0,14 V efficaci**, dentro la finestra d'ingresso del TPA3116. Il condensatore blocca la componente continua, che resta ferma a metà scala qualunque cosa faccia il respiro.
+
+---
+
+## Il 74HCT245: perché serve
+
+L'ESP32 ha logica a **3,3 V**, i gate dei MOSFET vogliono 5 V. L'AOD4184 dichiara la resistenza di conduzione a 4,5 V e a 10 V, **non a 3,3 V**: a quella tensione funzionerebbe probabilmente, ma "probabilmente" non è il criterio con cui è stato dimensionato il resto del progetto.
+
+Il SN74HCT245 risolve la cosa in modo verificabile: ha soglie d'ingresso **HCT**, cioè tara il livello alto a 2,0 V — quindi i 3,3 V dell'ESP32 lo pilotano con margine — ed essendo alimentato a 5 V le sue uscite commutano a 5 V pieni, con corrente vera. Otto canali: tre per i LED, due per i motorini della disposizione ibrida, tre di scorta.
+
+```
+ESP32 GPIO ──── A1..A8   (ingressi, 3,3 V)
+                B1..B8 ──── SIG dei moduli D4184   (uscite, 5 V)
+VCC ──── 5 V        DIR ──── 5 V   (A verso B)
+GND ──── massa      OE  ──── GND  (uscite abilitate)
+```
+
+---
+
+## Il suono non ha più un chip
+
+Sull'Uno il suono veniva da un VS1053 comandato via MIDI, e i timbri erano quelli di una tabella General MIDI. Qui il suono **è generato dal firmware**: tre voci sintetizzate a 22050 Hz da un task che gira sul core 0, mentre il core 1 fa sensori e attuatori.
+
+```
+ESP32 GPIO18 ──── BCK  ⎫
+      GPIO19 ──── LRCK ⎬ PCM5102A
+      GPIO23 ──── DIN  ⎭
+      3,3 V  ──── VIN        (il modulo accetta 3,3 V o 5 V)
+      GND    ──── GND
+
+Ponticelli sul modulo, da controllare PRIMA di alimentare:
+   SCK  → LOW     nessun master clock esterno: usa il PLL interno
+   FLT  → LOW     filtro a latenza normale
+   DEMP → LOW     de-enfasi disattivata
+   XSMT → HIGH    ⚠ se resta basso l'uscita e' MUTATA
+   FMT  → LOW     formato I2S standard
+
+Uscita: LROUT / ROUT / AGND, oppure il jack da 3,5 mm che li duplica.
+```
+
+> ⚠️ **XSMT è la trappola classica.** È il controllo di soft mute: basso significa silenzio. Se il modulo arriva con quel ponticello aperto, il DAC funziona perfettamente e non si sente niente. È il primo posto da guardare se l'audio manca.
 
 ---
 
@@ -32,88 +98,24 @@ ALIMENTATORE 12 V / 8 A   (spina 5,5 × 2,1 mm)
    │
    ├── +12V ──┬── striscia LED, filo "+" (anodo comune)
    │          ├── amplificatore TPA3116  V+
-   │          └── modulo buck LM2596 ──[5,0 V]── Arduino pin 5V   (NON usare VIN)
+   │          ├── modulo buck LM2596 ──[5,0 V]──┬── ESP32 pin VIN (o 5V)
+   │          │                                └── 74HCT245 VCC
    │
    └── GND ───► NODO DI MASSA A STELLA ◄───────────────────────────┐
-                     ├── Arduino GND                               │
+                     ├── ESP32 GND                                 │
                      ├── GND dei 3 moduli MOSFET                   │
                      ├── GND amplificatore                         │
-                     ├── GND modulo VS1053                         │
+                     ├── GND PCM5102A e 74HCT245                   │
                      └── negativo dell'alimentatore ────────────────┘
 ```
 
 **Un solo punto fisico di massa.** Masse a catena = anelli di massa: la corrente dell'amplificatore attraversa il ritorno dei sensori e il segnale PPG diventa illeggibile.
 
-> **Prima di collegare l'LM2596 all'Arduino, regolalo a 5,00 V con il multimetro.** Esce di fabbrica con il trimmer in posizione arbitraria e può dare 12 V. È il modo più comune di uccidere una scheda.
+> **Prima di collegare l'LM2596 alla scheda, regolalo a 5,00 V con il multimetro.** Esce di fabbrica con il trimmer in posizione arbitraria e può dare 12 V. È il modo più comune di uccidere una scheda.
 >
-> **Non tenere USB e LM2596 collegati insieme.** Il pin `5V` scavalca il regolatore di bordo e l'USB non ha protezione su quella linea. Servono due ponticelli da sfilare prima di ogni upload — quello dei 5 V e quello verso l'`Rx` del VS1053. Montali su due header vicini fra loro e vicini alla presa USB, con un'etichetta.
-
----
-
-## Canale tattile — identico per sterno e addome
-
-```
-Arduino D9 (o D10)
-   │
-  [10 kΩ]
-   │
-   ├──[1 kΩ]──── GND   ← attenuatore 1:11
-   ├──[1 µF]──── GND   ← filtro: taglia a 175 Hz, uccide la portante a 31 kHz
-   │
-  [4,7 µF] in serie    ← blocca la continua
-   │
-   └──── ingresso L (o R) dell'amplificatore TPA3116
-
-TPA3116 uscita L ──── trasduttore STERNO
-TPA3116 uscita R ──── trasduttore ADDOME
-```
-
-**Nessun MOSFET su questo percorso: è un segnale, non potenza.**
-
-### Perché l'attenuatore
-
-Un TPA3116 ha guadagno fisso intorno ai 32 dB e arriva a fondo scala con circa **0,19 V efficaci** in ingresso. Il PWM di Arduino, filtrato, ne produrrebbe **1,4**: sette volte troppo. L'amplificatore toserebbe il segnale in permanenza, e la sinusoide a 40 Hz arriverebbe al corpo come un'onda quadra distorta — proprio la cosa che il progetto cerca di evitare.
-
-Il partitore 10 kΩ / 1 kΩ porta il livello a **0,126 V efficaci** con `TAT_MAX = 200`.
-
-**Dimensionamento del filtro.** La resistenza equivalente vista dal condensatore è 10 kΩ in parallelo a 1 kΩ, cioè 909 Ω. Con 1 µF:
-
-```
-f_taglio = 1 / (2π · 909 · 1e-6) ≈ 175 Hz
-```
-
-A 31 372 Hz l'attenuazione è 31372/175 ≈ 179×, cioè circa **−45 dB**: della portante non resta niente. A 40 Hz la rete è invece piatta.
-
-### Perché l'uscita riposa a metà scala
-
-Il PWM filtrato diventa una tensione continua: duty 0 → 0 V, duty 255 → 5 V. Se la sinusoide venisse generata fra 0 e "ampiezza", il **valore medio** cambierebbe con il respiro, e quella deriva a 0,2 Hz arriverebbe all'amplificatore come componente continua variabile: bobina spostata dal centro, riscaldamento, meno escursione utile.
-
-Generando la sinusoide **simmetrica attorno a 128**, il valore medio resta fisso a 2,5 V qualunque cosa faccia il respiro: cambia solo l'ampiezza alternata. Anche a riposo i pin restano a 128, non a zero — continua ferma significa silenzio dopo il condensatore.
-
-### Collaudo dell'attenuatore senza oscilloscopio
-
-La rete è resistiva, quindi il rapporto di partizione si misura a tensione ferma. Sketch di prova:
-
-```cpp
-void setup() {
-  pinMode(9, OUTPUT);
-  TCCR1B = (TCCR1B & 0b11111000) | 0b001;  // 31,4 kHz come nel firmware
-  analogWrite(9, 228);                     // picco della sinusoide
-}
-void loop() {}
-```
-
-Puntale sul nodo fra 10 kΩ, 1 kΩ e 1 µF — **prima** del condensatore da 4,7 µF, che in continua isola. Portata 2 V continui.
-
-| `analogWrite` | Cosa rappresenta | Atteso |
-|---|---|---|
-| 228 | picco alto della sinusoide | 0,406 V |
-| 128 | riposo, la continua fissa | 0,228 V |
-| 28 | picco basso della sinusoide | 0,050 V |
-
-La differenza fra i due picchi è **0,356 V picco-picco**; l'efficace di una sinusoide con quell'escursione vale 0,356 / (2√2) = **0,126 V**. Se i tre numeri tornano entro il 5%, l'attenuatore è giusto.
-
-L'impedenza del nodo è 909 Ω contro i 10 MΩ del multimetro: nessun errore di carico.
+> **Non tenere USB e LM2596 collegati insieme.** Il pin `VIN` alimenta il regolatore di bordo dell'ESP32 in parallelo all'USB, e le due sorgenti si contrastano. Serve **un solo ponticello** da sfilare prima di ogni upload, quello dei 5 V: montalo vicino alla presa USB con un'etichetta.
+>
+> Su Uno i ponticelli erano due, perché anche la linea MIDI verso il VS1053 andava staccata. Senza VS1053 quel problema non esiste più.
 
 ---
 
@@ -136,31 +138,21 @@ Commutazione low-side: duty maggiore = più luce, nessuna inversione. **Nessun d
 
 ```
 FSR402  (fascia toracica)
-   pin 1 ──── Arduino 5V
-   pin 2 ──┬─ Arduino A0
+   pin 1 ──── ESP32 3,3 V
+   pin 2 ──┬─ GPIO34
            ├─ 10 kΩ ── GND      ← partitore
            └─ 1 µF  ── GND      ← taglio a ~32 Hz, il respiro sta sotto 1 Hz
 
-PULSE SENSOR  (lobo dell'orecchio)
-   rosso  ──[100 Ω]──┬── Arduino 5V   ← filtro di alimentazione: tiene il
-                     └── 100 µF ─ GND    sensore fuori dal ripple dell'ampli
-   nero   ─────────────── GND (nodo a stella)
-   viola  ──[1 kΩ]──┬──── Arduino A1
-                    └──── 1 µF ── GND ← antialias e reiezione del ronzio
-
-VS1053  (breakout Adafruit 1381)
-   VCC    ──── Arduino 5V      i pin di interfaccia hanno i level shifter
-   GND    ──── nodo a stella
-   Rx     ──── Arduino D1 (TX)
-   RESET  ──── Arduino D8
-   GPIO-0 ──── GND      ⎫ strapping del modo MIDI, prima del rilascio del reset
-   GPIO-1 ──── 3,3 V    ⎭ ⚠ i GPIO NON sono 5 V safe: usare il pin 3,3 V
-   LOUT / ROUT / AGND ──── jack cuffie
+MAX30102  (lobo dell'orecchio)
+   VIN  ──── ESP32 3,3 V     ⚠ NON 5 V: i cloni senza regolatore
+   GND  ──── massa              friggono la logica interna a 1,8 V
+   SDA  ──── GPIO21
+   SCL  ──── GPIO22
 ```
 
-> ⚠️ **I GPIO del VS1053 non sono 5 V safe.** I level shifter coprono i pin di interfaccia, non i GPIO. `GPIO-1` va sul pin **3,3 V** dell'Arduino, mai sui 5 V. È l'unico punto del cablaggio dove sbagliare distrugge il chip.
+Il MAX30102 fa l'acquisizione a bordo, con il proprio convertitore e la reiezione della luce ambientale: **sparisce tutta la catena analogica** che serviva al Pulse Sensor — filtro di alimentazione da 100 Ω + 100 µF, rete antialias da 1 kΩ + 1 µF, e la sensibilità al rumore dell'amplificatore che era il punto più fragile del progetto su Uno.
 
-> Sul breakout Adafruit il pin di massa audio cambia nome fra le revisioni: **GBUF sulla v1, AGND sulla v2**. Guarda la serigrafia prima di cablare il jack cuffie.
+Il firmware usa il solo canale infrarosso: il LED rosso serve a calcolare la saturazione di ossigeno, che qui non interessa, e spegnerlo riduce consumo e riscaldamento.
 
 ### Le codine dell'FSR402 sono delicate
 

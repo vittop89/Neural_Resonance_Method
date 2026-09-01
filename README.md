@@ -1,6 +1,6 @@
 # Neural Resonance Method
 
-**Un apparecchio didattico di biofeedback respiratorio su Arduino Uno.** Legge il respiro e il battito cardiaco, e con quei due segnali pilota tre canali sensoriali sincronizzati: vibrazione, luce e suono.
+**Un apparecchio di biofeedback respiratorio su ESP32.** Legge il respiro e il battito cardiaco, e con quei due segnali pilota tre canali sensoriali sincronizzati: vibrazione, luce e suono.
 
 Nato come progetto di elettronica e trattamento del segnale, documentato per essere ricostruito, misurato e — soprattutto — discusso in aula. Tutti i dimensionamenti sono verificati contro le schede tecniche dei costruttori e riportati per esteso, compresi gli errori commessi durante la progettazione e come sono stati trovati.
 
@@ -30,11 +30,11 @@ L'ultima riga della colonna "Luce" è la parte interessante. La saturazione del 
 |---|---|---|
 | **Sham** | ponticello D4 verso GND all'accensione | Sessione di controllo: la portante a 40 Hz non viene generata, **tutto il resto è identico**. Serve a confrontare sessioni con e senza stimolazione senza sapere quale si sta facendo |
 | **Ingressi sintetici** | `#define INGRESSI_SINTETICI 1` | Respiro e battito generati dal firmware, con aritmia sinusale simulata. Sviluppo, debug e dimostrazioni in classe senza sensori né volontari |
-| **Telemetria** | `#define TELEMETRIA 1` | CSV a 115200, e all'avvio stampa il registro delle sessioni salvate in EEPROM |
+| **Telemetria** | `#define TELEMETRIA 1` | CSV a 115200, sempre disponibile. All'avvio stampa il registro delle sessioni |
 
 Il ponticello sham non è un `#define` di proposito: un `#define` lo decide chi compila, che quindi sa sempre in quale condizione si trova, e il confronto non vale niente. Il ponticello lo può mettere un'altra persona, o lo si tira a sorte annotando l'esito su un foglio da aprire alla fine.
 
-Ogni sessione più lunga di due minuti finisce nel **registro in EEPROM**: durata, coerenza media, BPM medio e flag sham, quattro byte per sessione, fino a 200 sessioni. Il record si scrive quando si toglie il sensore dal lobo, che è il gesto naturale di fine sessione. Si rileggono compilando con `TELEMETRIA 1`.
+Ogni sessione più lunga di due minuti finisce nel **registro in flash**: durata, coerenza media, BPM medio e flag sham, fino a 500 sessioni. Il record si scrive quando si toglie il sensore dal lobo, che è il gesto naturale di fine sessione. Si rileggono compilando con `TELEMETRIA 1`.
 
 ---
 
@@ -89,9 +89,10 @@ Dettagli, quote e vincoli in [hardware/WIRING.md](hardware/WIRING.md#montaggio-m
 
 ```
 firmware/
-  nrm_v2_trasduttori/   firmware corrente: 40 Hz reali, sintesi MIDI, coerenza
-                        RSA, e il #define per la disposizione ibrida
-  nrm_v1_erm/           prima versione con motori a massa eccentrica (vedi sotto)
+  nrm_v3_esp32/         firmware corrente: ESP32, sintesi audio software,
+                        40 Hz da DAC, coerenza RSA, sham, ingressi sintetici
+  nrm_v2_trasduttori/   versione Arduino Uno, con VS1053 e MIDI (vedi sotto)
+  nrm_v1_erm/           prima versione con motori a massa eccentrica
 hardware/
   BOM.md                distinta con link, prezzi e quantità
   WIRING.md             collegamenti, dimensionamenti e montaggio meccanico
@@ -102,9 +103,26 @@ SAFETY.md               leggere prima di costruire
 NOTICE.md               avvertenze legali e licenze
 ```
 
-### Perché ci sono due versioni del firmware
+## Perché ESP32 e non Arduino
 
-La `v1` pilota due motori a massa eccentrica, come nel progetto iniziale. **Non è deprecata per capriccio: non può funzionare come previsto**, e il perché è istruttivo. Un motore a massa eccentrica produce vibrazione ruotando, e la sua costante di tempo meccanica è 20–50 ms; un periodo da 40 Hz dura 25 ms. Il rotore non fa in tempo né ad accelerare né a fermarsi, e quello che si percepisce è un ronzio a intensità costante.
+Il progetto è nato su Arduino Uno, e metà del lavoro è finito in aggiramenti dei suoi limiti: sette canali PWM richiesti su sei disponibili, MIDI e telemetria che si escludono per via dell'unica porta seriale, i timer da proteggere per non rompere `millis()`, `sqrt()` spostata fuori dal loop, la tabella seno che pesa sui 2 KB di RAM.
+
+Sull'ESP32 **nessuno di quei problemi esiste**, e insieme spariscono tre componenti:
+
+| Sull'Uno serviva | Sull'ESP32 |
+|---|---|
+| VS1053 comandato via MIDI, timbri General MIDI | il suono è **sintetizzato dal firmware**: tre voci a 22050 Hz su un task dedicato del core 0 |
+| PWM a 31 kHz + rete RC + attenuatore + collaudo in continua a tre punti | **due DAC veri**: esce già tensione analogica, resta un partitore per il livello |
+| PCA9685 per avere abbastanza canali PWM | **16 canali LEDC** indipendenti, ne restano undici liberi |
+| Pulse Sensor analogico 3,3★ con filtro di alimentazione e antialias | **MAX30102** digitale a 3,3 V, la stessa logica dell'ESP32 |
+
+Il prezzo da pagare è uno solo: la logica a 3,3 V non basta a pilotare i gate dei MOSFET, e serve un buffer **SN74HCT245** da 11 €. In cambio la configurazione consigliata scende da 443,94 € a **384,16 €** e sparisce l'unico componente su cui la riuscita non era garantita.
+
+La versione Uno resta nel repository, completa e documentata. Non è deprecata: è solo la strada più lunga.
+
+### Le tre versioni del firmware
+
+La `v2` è la versione Arduino Uno appena descritta. La `v1` pilota due motori a massa eccentrica, come nel progetto iniziale. **Non è deprecata per capriccio: non può funzionare come previsto**, e il perché è istruttivo. Un motore a massa eccentrica produce vibrazione ruotando, e la sua costante di tempo meccanica è 20–50 ms; un periodo da 40 Hz dura 25 ms. Il rotore non fa in tempo né ad accelerare né a fermarsi, e quello che si percepisce è un ronzio a intensità costante.
 
 Resta nel repo perché il confronto fra le due versioni è il pezzo più utile del progetto: stesso codice, stesso obiettivo, e un limite fisico che nessuna quantità di software può aggirare.
 
@@ -114,12 +132,12 @@ Resta nel repo perché il confronto fra le due versioni è il pezzo più utile d
 
 | | |
 |---|---|
-| Firmware | scritto e commentato, **non ancora compilato né collaudato su hardware** |
-| Dimensionamenti | verificati sulle schede dei costruttori (Dayton Audio, Adafruit, TI, AOS, Interlink) |
+| Firmware ESP32 | scritto e commentato, **non ancora compilato né collaudato su hardware** |
+| Dimensionamenti | verificati sulle schede dei costruttori (Espressif, Dayton Audio, TI, AOS, Maxim, Interlink) |
 | Distinta | inserzioni verificate a settembre 2026 |
 | Hardware fisico | non ancora costruito |
 
-Il firmware è scritto per compilare pulito con l'IDE Arduino standard, senza librerie esterne, ma **finché non gira su una scheda vera va trattato come un progetto sulla carta**. Chi lo costruisce per primo è invitato ad aprire una issue con quello che trova.
+Il firmware ha **una sola dipendenza esterna**, la libreria SparkFun MAX3010x, ed è scritto per arduino-esp32 2.0.x. Ma **finché non gira su una scheda vera va trattato come un progetto sulla carta**. Chi lo costruisce per primo è invitato ad aprire una issue con quello che trova.
 
 ---
 

@@ -1,80 +1,87 @@
 # Distinta base
 
-Inserzioni verificate su Amazon.it a **settembre 2026**. I link puntano a prodotti specifici perché le compatibilità sono state controllate uno per uno (vedi [VERIFICATION.md](VERIFICATION.md)); i prezzi e la disponibilità cambiano.
+Inserzioni verificate su Amazon.it a **settembre 2026**. I link puntano a prodotti specifici perché le compatibilità sono state controllate una per una: vedi [VERIFICATION.md](VERIFICATION.md).
 
-Configurazione unica: non ci sono righe opzionali nella lista base.
+Il progetto è su **ESP32**. La versione su Arduino Uno resta nel repository come `firmware/nrm_v2_trasduttori`, ma non è più la strada consigliata — [il perché è spiegato nel README](../README.md#perché-esp32-e-non-arduino).
 
-## Lista base — 365,90 €
+## Lista base — 360,18 €
 
 | # | Ruolo | Prodotto | Qtà | € |
 |---|---|---|---|---|
-| 1 | Microcontrollore | [Arduino UNO Rev3 (A000066)](https://www.amazon.it/dp/B008GRTSV6) | 1 | 29,30 |
+| 1 | Microcontrollore | [ESP32-WROOM-32D DevKit V4, 38 pin](https://www.amazon.it/dp/B0C5HD6ZGJ) | 1 | 14,99 |
 | 2 | Tatto | [Dayton Audio BST-2, trasduttore tattile 35 W](https://www.amazon.it/dp/B08NN5V62G) | **2** | 103,34 |
 | 3 | Pilotaggio tatto | [TPA3116 stereo 2×50 W](https://www.amazon.it/dp/B07DJ5RRS3) | 1 | 14,99 |
-| 4 | Suono | [Modulo VS1053 sintetizzatore MIDI](https://www.amazon.it/dp/B07DJZ8HCL) | 1 | 12,99 |
-| 5 | Luce | [Striscia RGB 12 V 5050, bobina nuda 5 m](https://www.amazon.it/dp/B07YZGMZQD) | 1 | 12,99 |
-| 6 | Driver luce | [Moduli MOSFET D4184, 5 pz](https://www.amazon.it/dp/B07HBVTWMY) | 1 | 6,99 |
-| 7 | Alimentazione | [Alimentatore 12 V 8 A, spina 5,5 × 2,1 mm](https://www.amazon.it/dp/B07JMNFDQM) | 1 | 19,99 |
-| 8 | Da 12 V a 5 V | [Step-down LM2596, 3 A](https://www.amazon.it/dp/B0D9HSB82X) | 1 | 7,79 |
-| 9 | Sensore respiro | [FSR402, 2 pz](https://www.amazon.it/dp/B0GJ53QK91) | 1 | 8,89 |
-| 10 | Sensore battito | [Pulse Sensor analogico, 2 pz](https://www.amazon.it/dp/B07RD2LLK6) | 1 | 12,90 |
-| 11 | Fascia toracica | [Fascia elastica regolabile 70–105 cm](https://www.amazon.it/dp/B0CNP1V41P) | 1 | 14,99 |
-| 12 | Passivi | [Kit componenti DIYoung 1390 pz](https://www.amazon.it/dp/B0DXC7MX53) | 1 | 18,98 |
-| 13 | Prototipazione | [Breadboard 830 + 400 punti con jumper](https://www.amazon.it/dp/B0B5TCKTQH) | 1 | 14,99 |
-| 14 | Connessione 12 V | [Jack DC 5,5 × 2,1 con morsettiera, 10 coppie](https://www.amazon.it/dp/B0GSFS88MX) | 1 | 6,69 |
-| 15 | Connessione striscia | [Connettori 4 pin 10 mm senza saldatura, 20 pz](https://www.amazon.it/dp/B0DMCJ7B15) | 1 | 11,99 |
-| 16 | Contenitore | [Scatola ABS 250 × 150 × 100 mm](https://www.amazon.it/dp/B085NPC2R1) | 1 | 32,12 |
-| 17 | Fissaggio moduli | [Distanziali e viti M3 in nylon, 580 pz](https://www.amazon.it/dp/B0H4LTLVCW) | 1 | 10,99 |
-| 18 | Passivi fissi | [Basette millefori 9 × 15 cm, 10 pz](https://www.amazon.it/dp/B0BZRW8KRP) | 1 | 11,99 |
-| 19 | Connettori a pannello | [GX12 aviazione 4 pin, 5 paia](https://www.amazon.it/dp/B0CRB6VQTD) | 1 | 12,99 |
+| 4 | Uscita audio | [Modulo DAC I²S PCM5102A](https://www.amazon.it/dp/B0GCK53SKK) | 1 | 13,99 |
+| 5 | Adattamento logica | [SN74HCT245N DIP-20, 10 pz](https://www.amazon.it/dp/B0DQ5WRHS3) | 1 | 11,00 |
+| 6 | Luce | [Striscia RGB 12 V 5050, bobina nuda 5 m](https://www.amazon.it/dp/B07YZGMZQD) | 1 | 12,99 |
+| 7 | Driver luce | [Moduli MOSFET D4184, 5 pz](https://www.amazon.it/dp/B07HBVTWMY) | 1 | 6,99 |
+| 8 | Alimentazione | [Alimentatore 12 V 8 A, spina 5,5 × 2,1 mm](https://www.amazon.it/dp/B07JMNFDQM) | 1 | 19,99 |
+| 9 | Da 12 V a 5 V | [Step-down LM2596, 3 A](https://www.amazon.it/dp/B0D9HSB82X) | 1 | 7,79 |
+| 10 | Sensore respiro | [FSR402, 2 pz](https://www.amazon.it/dp/B0GJ53QK91) | 1 | 8,89 |
+| 11 | Sensore battito | [MAX30102, 2 pz](https://www.amazon.it/dp/B07XFBZDL7) | 1 | 9,49 |
+| 12 | Fascia toracica | [Fascia elastica regolabile 70–105 cm](https://www.amazon.it/dp/B0CNP1V41P) | 1 | 14,99 |
+| 13 | Passivi | [Kit componenti DIYoung 1390 pz](https://www.amazon.it/dp/B0DXC7MX53) | 1 | 18,98 |
+| 14 | Prototipazione | [Breadboard 830 + 400 punti con jumper](https://www.amazon.it/dp/B0B5TCKTQH) | 1 | 14,99 |
+| 15 | Connessione 12 V | [Jack DC 5,5 × 2,1 con morsettiera, 10 coppie](https://www.amazon.it/dp/B0GSFS88MX) | 1 | 6,69 |
+| 16 | Connessione striscia | [Connettori 4 pin 10 mm senza saldatura, 20 pz](https://www.amazon.it/dp/B0DMCJ7B15) | 1 | 11,99 |
+| 17 | Contenitore | [Scatola ABS 250 × 150 × 100 mm](https://www.amazon.it/dp/B085NPC2R1) | 1 | 32,12 |
+| 18 | Fissaggio moduli | [Distanziali e viti M3 in nylon, 580 pz](https://www.amazon.it/dp/B0H4LTLVCW) | 1 | 10,99 |
+| 19 | Passivi fissi | [Basette millefori 9 × 15 cm, 10 pz](https://www.amazon.it/dp/B0BZRW8KRP) | 1 | 11,99 |
+| 20 | Connettori a pannello | [GX12 aviazione 4 pin, 5 paia](https://www.amazon.it/dp/B0CRB6VQTD) | 1 | 12,99 |
 
-**Fuori Amazon, da ferramenta:** un pannello di compensato o MDF da **15–18 mm**, circa **40 × 90 cm**, su cui bullonare i trasduttori. Pochi euro se fatto tagliare su misura, ed è la scelta di montaggio più importante del progetto — sotto i 12 mm il pannello flette e assorbe l'energia invece di trasmetterla.
+**Fuori Amazon, da ferramenta:** un pannello di compensato o MDF da **15–18 mm**, circa **40 × 90 cm**, su cui bullonare i trasduttori. Pochi euro se fatto tagliare su misura, ed è la scelta di montaggio più importante del progetto.
 
-## Variante "certezza" — 443,94 €
+## Cosa è cambiato passando all'ESP32
 
-Due sostituzioni che tolgono le incognite residue.
+Tre componenti sono spariti dalla distinta e uno è stato sostituito con qualcosa di migliore.
 
-| Prodotto | Rischio che elimina | Δ |
+| | Su Arduino Uno | Su ESP32 | Δ |
+|---|---|---|---|
+| Microcontrollore | Uno Rev3, 29,30 € | ESP32 DevKit, 14,99 € | −14,31 |
+| Sintesi audio | VS1053, 12,99 € (o **67,05 €** nella variante certezza) | DAC I²S PCM5102A, 13,99 € — **il suono è generato in software** | +1,00, ma **−54,06** sulla variante certezza |
+| Espansione PWM | PCA9685, 7,99 € nella disposizione ibrida | non serve: 16 canali LEDC nativi | −7,99 |
+| Sensore battito | Pulse Sensor analogico 3,3★, 12,90 € | MAX30102 digitale, 9,49 € | −3,41 |
+| Adattamento logica | non serviva (5 V nativi) | SN74HCT245, 11,00 € | +11,00 |
+
+Il MAX30102 diventa la scelta ovvia e non più un ripiego: è un dispositivo **a 3,3 V**, cioè esattamente la logica dell'ESP32. Sull'Uno avrebbe richiesto un traslatore; qui si collega diretto, e porta con sé un convertitore dedicato e la reiezione della luce ambientale.
+
+## Variante consigliata — 384,16 €
+
+Una sola aggiunta, e non è un componente.
+
+| Prodotto | Perché | € |
 |---|---|---|
-| [Adafruit VS1053 CODEC + MicroSD (1381)](https://www.amazon.it/dp/B0HGBTY9KQ) — 67,05 € al posto del generico da 12,99 | GPIO tutti esposti e level shifter a bordo: il modo MIDI è documentato ufficialmente e i due partitori 5 V → 3,3 V non servono più | +54,06 € |
-| [Kit saldatore 80 W regolabile 13 in 1](https://www.amazon.it/dp/B09B3GRVTM) | I passivi vanno saldati su millefori; serve controllo di temperatura e punte in buono stato | +23,98 € |
+| [Kit saldatore 80 W regolabile 13 in 1](https://www.amazon.it/dp/B09B3GRVTM) | I passivi e il 74HCT245 vanno saldati su millefori; serve controllo di temperatura e punte in buono stato | 23,98 |
 
-## Opzionali, ordinabili dopo
+**Non esiste più una "variante certezza".** Sull'Uno serviva perché il modo MIDI del VS1053 era l'unico punto del progetto che poteva non funzionare al primo colpo, e la scheda Adafruit che lo garantiva costava 54 € in più. Qui il VS1053 non c'è: il suono lo genera il microcontrollore.
+
+## Disposizione ibrida — opzionale, +15,99 €
+
+Separa la portante a 40 Hz (trasduttori sotto il pannello) dallo scivolamento alto/basso col respiro (micromotori sulla fascia toracica). Vedi [WIRING.md](WIRING.md#disposizione-c--ibrida-il-cosa-da-sotto-il-dove-da-sopra).
+
+| Prodotto | Qtà | € |
+|---|---|---|
+| [Micromotori a vibrazione 10 × 2,7 mm, 3 V, 10 pz](https://www.amazon.it/dp/B0F42P63PW) | 1 | 15,99 |
+
+Sull'Uno serviva anche un PCA9685, perché la disposizione ibrida chiedeva sette canali PWM su sei disponibili. **Sull'ESP32 il problema non esiste**: il LEDC ha 16 canali indipendenti, e ne restano undici liberi. I due diodi `1N5819` per i motorini e due moduli `D4184` sono già nella lista base.
+
+## Opzionale
 
 | Prodotto | Quando serve | € |
 |---|---|---|
-| [MAX30102, 2 pz](https://www.amazon.it/dp/B07XFBZDL7) | se entrambi i Pulse Sensor deludono — sono cloni a 3,3★. PPG digitale su I²C, più immune al rumore. Va riscritto solo il blocco di lettura battito | 9,49 |
-| [Oscilloscopio FNIRSI DSO-510, 10 MHz](https://www.amazon.it/dp/B0DSPT6DGR) | se ci si blocca su qualcosa che il multimetro non spiega. Le misure critiche sono coperte dalla prova in continua descritta in [WIRING.md](WIRING.md) | 59,99 |
+| [Oscilloscopio FNIRSI DSO-510, 10 MHz](https://www.amazon.it/dp/B0DSPT6DGR) | Meno utile che sull'Uno: senza portante PWM da verificare, le misure critiche si riducono al livello d'uscita del DAC. Serve solo se ci si blocca su qualcosa che il multimetro non spiega | 59,99 |
 
 ## Strumenti
 
-Un **multimetro con portata 2 V continui e risoluzione al millivolt** è indispensabile: senza non si regola l'LM2596 a 5,00 V, ed è il modo più comune di bruciare l'Arduino. Anche un modello economico tipo A830L basta.
-
-Non serve un multimetro True RMS: la verifica dell'attenuatore audio si fa in continua (vedi [WIRING.md](WIRING.md)).
+Un **multimetro con portata 2 V continui e risoluzione al millivolt** resta indispensabile: senza non si regola l'LM2596 a 5,00 V prima di collegarlo, ed è il modo più comune di bruciare una scheda. Un modello economico tipo A830L basta.
 
 ## Riepilogo
 
 | Configurazione | Totale |
 |---|---|
-| Base | 365,90 € |
-| **Consigliata** (Adafruit VS1053 + kit saldatore) | **443,94 €** |
-| Con riserva PPG | 453,43 € |
-| Tutto, oscilloscopio compreso | 513,42 € |
+| Base | 360,18 € |
+| **Consigliata** (con kit saldatore) | **384,16 €** |
+| Con disposizione ibrida | 400,15 € |
+| Tutto, oscilloscopio compreso | 460,14 € |
 
-## Disposizione ibrida — opzionale, +23,98 €
-
-Separa la portante a 40 Hz (trasduttori sotto il pannello) dallo scivolamento
-alto/basso col respiro (micromotori leggeri sulla fascia toracica). Vedi
-[WIRING.md](WIRING.md#disposizione-c--ibrida-il-cosa-da-sotto-il-dove-da-sopra).
-
-| Prodotto | Qtà | € |
-|---|---|---|
-| [Micromotori a vibrazione 10 × 2,7 mm, 3 V, 10 pz](https://www.amazon.it/dp/B0F42P63PW) | 1 | 15,99 |
-| [Modulo PCA9685, 16 canali PWM su I²C](https://www.amazon.it/dp/B0BKZC1XWR) | 1 | 7,99 |
-
-Il PCA9685 serve perché questa disposizione richiede sette canali PWM e l'Uno
-ne ha sei. In alternativa si rinuncia al canale verde della striscia LED, a
-costo zero ma perdendo il giallo dello stato di allarme.
-
-I due diodi `1N5819` e due moduli MOSFET `D4184` servono anche qui: sono già
-nella lista base.
+Per confronto, la stessa configurazione su Arduino Uno costava **443,94 €**: l'ESP32 fa risparmiare quasi sessanta euro *e* elimina il componente più incerto del progetto.
